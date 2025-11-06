@@ -9,5 +9,7 @@ public class PDVMappingProfile : Profile
     public PDVMappingProfile()
     {
         CreateMap<SessaoCaixa, SessaoCaixaDto>();
+        CreateMap<PdvVenda, PdvVendaDto>();
+        CreateMap<PdvVendaItem, PdvVendaItemDto>();
     }
 }

@@ -33,4 +33,24 @@ public class CaixaAppService : AppServiceBase, ICaixaAppService
 
         return _mapper.Map<SessaoCaixaDto>(sessao);
     }
+
+    public async Task<PdvVendaDto> RegistrarVenda(RegistrarVendaDto dto)
+    {
+        var sessao = await _sessaoCaixaRepository.GetById(dto.SessaoCaixaId);
+        if (sessao == null)
+        {
+            throw new Exception("Sessão do caixa não encontrada.");
+        }
+
+        var venda = sessao.RegistrarVenda();
+
+        foreach (var itemDto in dto.Itens)
+        {
+            venda.AdicionarItem(itemDto.ProdutoId, itemDto.Quantidade, itemDto.ValorUnitario);
+        }
+
+        await _sessaoCaixaRepository.Update(sessao);
+
+        return _mapper.Map<PdvVendaDto>(venda);
+    }
 }
