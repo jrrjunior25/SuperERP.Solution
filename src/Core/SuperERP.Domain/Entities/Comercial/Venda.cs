@@ -25,13 +25,23 @@ public class Venda : EntityBase
 
     public void AdicionarItem(Guid produtoId, decimal quantidade, decimal valorUnitario)
     {
-        var item = new ItemVenda
+        var itemExistente = _itens.FirstOrDefault(i => i.ProdutoId == produtoId);
+
+        if (itemExistente != null)
         {
-            ProdutoId = produtoId,
-            Quantidade = quantidade,
-            ValorUnitario = valorUnitario
-        };
-        _itens.Add(item);
+            itemExistente.Quantidade += quantidade;
+        }
+        else
+        {
+            var item = new ItemVenda
+            {
+                ProdutoId = produtoId,
+                Quantidade = quantidade,
+                ValorUnitario = valorUnitario
+            };
+            _itens.Add(item);
+        }
+
         RecalcularTotal();
     }
 
