@@ -1,5 +1,10 @@
 using SuperERP.Web.Components;
 using MudBlazor.Services;
+using SuperERP.PDV.Application.Interfaces;
+using SuperERP.PDV.Application.Services;
+using SuperERP.PDV.Domain.Interfaces;
+using SuperERP.PDV.Infrastructure.Repositories;
+using SuperERP.PDV.Domain.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +12,17 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddMudServices();
+builder.Services.AddAutoMapper(typeof(SuperERP.PDV.Application.AutoMapper.PDVMappingProfile));
+
+// Configuração da Injeção de Dependência para o Módulo PDV (Em Memória)
+builder.Services.AddSingleton<ICaixaRepository, CaixaRepositoryMemory>();
+builder.Services.AddSingleton<ISessaoCaixaRepository, SessaoCaixaRepositoryMemory>();
+builder.Services.AddScoped<ICaixaAppService, CaixaAppService>();
+
+// Adiciona um caixa padrão para fins de demonstração
+var caixaRepo = new CaixaRepositoryMemory();
+caixaRepo.Add(Caixa.Criar("Caixa Principal"));
+
 
 builder.Services.AddHttpClient("SuperERP.API", client =>
 {
