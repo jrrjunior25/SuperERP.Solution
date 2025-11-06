@@ -57,8 +57,8 @@ else
                 <MudDivider Class="my-4" />
 
                 <MudText Typo="Typo.h5">Total: @_totalVenda.ToString("C")</MudText>
-                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="FinalizarVenda" Disabled="@(!_itensVenda.Any())" Class="mt-4">
-                    Finalizar Venda
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="ProcessarPagamento" Disabled="@(!_itensVenda.Any())" Class="mt-4">
+                    Ir para Pagamento
                 </MudButton>
             </MudPaper>
         </MudItem>
@@ -117,26 +117,40 @@ else
         _totalVenda = _itensVenda.Sum(i => i.Quantidade * i.ValorUnitario);
     }
 
-    private async Task FinalizarVenda()
+    private async Task ProcessarPagamento()
     {
         try
         {
+            // 1. Cria a venda no estado "Em Aberto"
             var dto = new RegistrarVendaDto
             {
                 SessaoCaixaId = _sessaoAberta!.Id,
                 Itens = _itensVenda
             };
+            var vendaEmAberto = await CaixaService.RegistrarVenda(dto);
 
-            var vendaRegistrada = await CaixaService.RegistrarVenda(dto);
-            Snackbar.Add($"Venda #{vendaRegistrada.Id.ToString().Substring(0, 4)} registrada com sucesso!", Severity.Success);
+            // 2. Abre o diálogo de pagamento
+            var dialogParameters = new DialogParameters { ["Venda"] = vendaEmAberto };
+            var dialog = DialogService.Show<DialogoPagamento>("Processar Pagamento", dialogParameters);
+            var result = await dialog.Result;
 
-            // Limpa para a próxima venda
-            _itensVenda.Clear();
-            CalcularTotal();
+            // 3. Se o pagamento foi concluído, limpa a tela para a próxima venda
+            if (!result.Canceled)
+            {
+                Snackbar.Add($"Venda #{vendaEmAberto.Id.ToString().Substring(0, 4)} paga com sucesso!", Severity.Success);
+                _itensVenda.Clear();
+                CalcularTotal();
+                StateHasChanged();
+            }
+            // Se foi cancelado, a venda continua em aberto no backend, mas o fluxo do PDV é resetado.
+            else
+            {
+                Snackbar.Add("Pagamento cancelado.", Severity.Warning);
+            }
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Erro ao registrar a venda: {ex.Message}", Severity.Error);
+            Snackbar.Add($"Erro ao iniciar processo de pagamento: {ex.Message}", Severity.Error);
         }
     }
 }

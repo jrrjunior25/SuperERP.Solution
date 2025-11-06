@@ -11,5 +11,6 @@ public class PDVMappingProfile : Profile
         CreateMap<SessaoCaixa, SessaoCaixaDto>();
         CreateMap<PdvVenda, PdvVendaDto>();
         CreateMap<PdvVendaItem, PdvVendaItemDto>();
+        CreateMap<Pagamento, PagamentoDto>();
     }
 }

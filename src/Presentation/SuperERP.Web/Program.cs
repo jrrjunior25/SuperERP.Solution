@@ -17,6 +17,7 @@ builder.Services.AddAutoMapper(typeof(SuperERP.PDV.Application.AutoMapper.PDVMap
 // Configuração da Injeção de Dependência para o Módulo PDV (Em Memória)
 builder.Services.AddSingleton<ICaixaRepository, CaixaRepositoryMemory>();
 builder.Services.AddSingleton<ISessaoCaixaRepository, SessaoCaixaRepositoryMemory>();
+builder.Services.AddSingleton<IPdvVendaRepository, PdvVendaRepositoryMemory>();
 builder.Services.AddScoped<ICaixaAppService, CaixaAppService>();
 
 // Adiciona um caixa padrão para fins de demonstração
