@@ -1,0 +1,51 @@
+@inject SuperERP.PDV.Application.Interfaces.ICaixaAppService CaixaService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudNumericField @bind-Value="_valorAbertura" Label="Valor de Abertura" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentText="R$" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancelar">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" OnClick="ConfirmarAbertura">Confirmar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public Guid CaixaId { get; set; }
+
+    private decimal _valorAbertura;
+
+    private void Cancelar()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task ConfirmarAbertura()
+    {
+        try
+        {
+            if (CaixaId == Guid.Empty)
+            {
+                Snackbar.Add("ID do Caixa é inválido.", Severity.Error);
+                return;
+            }
+
+            var dto = new SuperERP.PDV.Application.Dtos.AbrirSessaoCaixaDto
+            {
+                CaixaId = CaixaId,
+                ValorAbertura = _valorAbertura
+            };
+
+            var novaSessao = await CaixaService.AbrirSessao(dto);
+            Snackbar.Add("Sessão de caixa aberta com sucesso!", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(novaSessao));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro ao abrir a sessão: {ex.Message}", Severity.Error);
+        }
+    }
+}

@@ -2,6 +2,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Core\SuperERP.Application\SuperERP.Application.csproj" />
+    <ProjectReference Include="..\..\Core\SuperERP.PDV.Application\SuperERP.PDV.Application.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\SuperERP.PDV.Infrastructure\SuperERP.PDV.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

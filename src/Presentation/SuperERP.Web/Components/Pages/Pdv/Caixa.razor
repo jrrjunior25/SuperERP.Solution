@@ -1,0 +1,156 @@
+@page "/pdv/caixa"
+@using SuperERP.PDV.Application.Dtos
+@using SuperERP.PDV.Domain.Interfaces
+@inject ICaixaAppService CaixaService
+@inject ICaixaRepository CaixaRepository // Injetar para buscar o caixa
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudText Typo="Typo.h3" GutterBottom="true">PDV - Ponto de Venda</MudText>
+
+@if (_loading)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else if (_sessaoAberta == null)
+{
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h5">Nenhuma sessão de caixa aberta.</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AbrirDialogoAbertura" Class="mt-4" Disabled="@(_caixaPrincipal == null)">
+            Abrir Caixa
+        </MudButton>
+        @if (_caixaPrincipal == null)
+        {
+            <MudText Color="Color.Error" Class="mt-2">Nenhum caixa encontrado. Configure um caixa antes de iniciar.</MudText>
+        }
+    </MudPaper>
+}
+else
+{
+    <MudGrid>
+        <MudItem xs="12" md="7">
+            <MudPaper Class="pa-4" Style="height: 100%;">
+                <MudText Typo="Typo.h6">Itens da Venda</MudText>
+                <MudTable Items="_itensVenda" Hover="true" Striped="true" Class="mt-4">
+                    <HeaderContent>
+                        <MudTh>Produto</MudTh>
+                        <MudTh>Qtd.</MudTh>
+                        <MudTh>Valor Un.</MudTh>
+                        <MudTh>Subtotal</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Produto">Produto @(_itensVenda.IndexOf(context) + 1)</MudTd>
+                        <MudTd DataLabel="Qtd.">@context.Quantidade</MudTd>
+                        <MudTd DataLabel="Valor Un.">@context.ValorUnitario.ToString("C")</MudTd>
+                        <MudTd DataLabel="Subtotal">@((context.Quantidade * context.ValorUnitario).ToString("C"))</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="5">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.h6">Lançar Produto</MudText>
+                <MudNumericField @bind-Value="_quantidade" Label="Quantidade" Variant="Variant.Outlined" Class="mt-4" Min="1" />
+                <MudNumericField @bind-Value="_valorUnitario" Label="Valor Unitário" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentText="R$" Class="mt-4" />
+                <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="AdicionarItem" Class="mt-4">Adicionar Item</MudButton>
+
+                <MudDivider Class="my-4" />
+
+                <MudText Typo="Typo.h5">Total: @_totalVenda.ToString("C")</MudText>
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="ProcessarPagamento" Disabled="@(!_itensVenda.Any())" Class="mt-4">
+                    Ir para Pagamento
+                </MudButton>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private bool _loading = true;
+    private SuperERP.PDV.Domain.Entities.Caixa? _caixaPrincipal;
+    private SessaoCaixaDto? _sessaoAberta;
+    private List<ItemVendaDto> _itensVenda = new();
+    private decimal _totalVenda = 0;
+
+    private decimal _quantidade = 1;
+    private decimal _valorUnitario;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var caixas = await CaixaRepository.GetAll();
+        _caixaPrincipal = caixas.FirstOrDefault(c => c.Nome == "Caixa Principal");
+        _loading = false;
+    }
+
+    private async Task AbrirDialogoAbertura()
+    {
+        var parameters = new DialogParameters { ["CaixaId"] = _caixaPrincipal!.Id };
+        var dialog = DialogService.Show<DialogoAberturaCaixa>("Abrir Sessão de Caixa", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is SessaoCaixaDto novaSessao)
+        {
+            _sessaoAberta = novaSessao;
+            StateHasChanged();
+        }
+    }
+
+    private void AdicionarItem()
+    {
+        if (_quantidade > 0 && _valorUnitario > 0)
+        {
+            _itensVenda.Add(new ItemVendaDto
+            {
+                ProdutoId = Guid.NewGuid(), // ID Fixo por enquanto
+                Quantidade = _quantidade,
+                ValorUnitario = _valorUnitario
+            });
+
+            _quantidade = 1;
+            _valorUnitario = 0;
+            CalcularTotal();
+        }
+    }
+
+    private void CalcularTotal()
+    {
+        _totalVenda = _itensVenda.Sum(i => i.Quantidade * i.ValorUnitario);
+    }
+
+    private async Task ProcessarPagamento()
+    {
+        try
+        {
+            // 1. Cria a venda no estado "Em Aberto"
+            var dto = new RegistrarVendaDto
+            {
+                SessaoCaixaId = _sessaoAberta!.Id,
+                Itens = _itensVenda
+            };
+            var vendaEmAberto = await CaixaService.RegistrarVenda(dto);
+
+            // 2. Abre o diálogo de pagamento
+            var dialogParameters = new DialogParameters { ["Venda"] = vendaEmAberto };
+            var dialog = DialogService.Show<DialogoPagamento>("Processar Pagamento", dialogParameters);
+            var result = await dialog.Result;
+
+            // 3. Se o pagamento foi concluído, limpa a tela para a próxima venda
+            if (!result.Canceled)
+            {
+                Snackbar.Add($"Venda #{vendaEmAberto.Id.ToString().Substring(0, 4)} paga com sucesso!", Severity.Success);
+                _itensVenda.Clear();
+                CalcularTotal();
+                StateHasChanged();
+            }
+            // Se foi cancelado, a venda continua em aberto no backend, mas o fluxo do PDV é resetado.
+            else
+            {
+                Snackbar.Add("Pagamento cancelado.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro ao iniciar processo de pagamento: {ex.Message}", Severity.Error);
+        }
+    }
+}
