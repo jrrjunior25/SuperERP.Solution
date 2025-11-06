@@ -1,0 +1,51 @@
+﻿version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: supererp-postgres
+    environment:
+      POSTGRES_DB: SuperERPDB
+      POSTGRES_USER: supererp
+      POSTGRES_PASSWORD: Super@ERP2025!
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - supererp-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: supererp-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: supererp
+      RABBITMQ_DEFAULT_PASS: Super@ERP2025!
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - supererp-network
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.api
+    container_name: supererp-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=SuperERPDB;Username=supererp;Password=Super@ERP2025!
+    ports:
+      - "5000:8080"
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - supererp-network
+
+volumes:
+  postgres-data:
+
+networks:
+  supererp-network:
+    driver: bridge

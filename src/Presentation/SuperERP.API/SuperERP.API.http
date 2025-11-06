@@ -1,0 +1,6 @@
+@SuperERP.API_HostAddress = http://localhost:5243
+
+GET {{SuperERP.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,25 @@
+﻿using FluentValidation;
+using MediatR;
+using Microsoft.Extensions.DependencyInjection;
+using SuperERP.Application.Behaviors;
+using System.Reflection;
+
+namespace SuperERP.Application;
+
+public static class DependencyInjection
+{
+    public static IServiceCollection AddApplication(this IServiceCollection services)
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        
+        services.AddMediatR(config => 
+            config.RegisterServicesFromAssembly(assembly));
+        
+        services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+        
+        services.AddAutoMapper(assembly);
+        services.AddValidatorsFromAssembly(assembly);
+
+        return services;
+    }
+}

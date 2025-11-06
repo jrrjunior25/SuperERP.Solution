@@ -1,0 +1,134 @@
+@page "/clientes"
+@rendermode InteractiveServer
+@inject IHttpClientFactory HttpClientFactory
+@inject ISnackbar Snackbar
+
+<PageTitle>Clientes - SuperERP</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Clientes</MudText>
+
+<MudCard>
+    <MudCardContent>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AbrirDialogNovo" StartIcon="@Icons.Material.Filled.Add">
+            Novo Cliente
+        </MudButton>
+        
+        <MudTable Items="@clientes" Class="mt-4" Loading="@loading" Hover="true" Breakpoint="Breakpoint.Sm">
+            <HeaderContent>
+                <MudTh>Nome</MudTh>
+                <MudTh>CPF/CNPJ</MudTh>
+                <MudTh>Email</MudTh>
+                <MudTh>Telefone</MudTh>
+                <MudTh>Ações</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Nome">@context.Nome</MudTd>
+                <MudTd DataLabel="CPF/CNPJ">@context.CpfCnpj</MudTd>
+                <MudTd DataLabel="Email">@context.Email</MudTd>
+                <MudTd DataLabel="Telefone">@context.Telefone</MudTd>
+                <MudTd DataLabel="Ações">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudCardContent>
+</MudCard>
+
+<MudDialog @bind-Visible="dialogVisible">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Novo Cliente</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="novoCliente.Nome" Label="Nome" Required="true" />
+        <MudTextField @bind-Value="novoCliente.CpfCnpj" Label="CPF/CNPJ" Required="true" Class="mt-3" />
+        <MudTextField @bind-Value="novoCliente.Email" Label="Email" InputType="InputType.Email" Class="mt-3" />
+        <MudTextField @bind-Value="novoCliente.Telefone" Label="Telefone" Class="mt-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="FecharDialog">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" OnClick="SalvarCliente">Salvar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<ClienteDto> clientes = new();
+    private bool loading = false;
+    private bool dialogVisible = false;
+    private NovoClienteDto novoCliente = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarClientes();
+    }
+
+    private async Task CarregarClientes()
+    {
+        loading = true;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("SuperERP.API");
+            clientes = await client.GetFromJsonAsync<List<ClienteDto>>("api/v1/clientes") ?? new();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro ao carregar clientes: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void AbrirDialogNovo()
+    {
+        novoCliente = new();
+        dialogVisible = true;
+    }
+
+    private void FecharDialog()
+    {
+        dialogVisible = false;
+    }
+
+    private async Task SalvarCliente()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("SuperERP.API");
+            var response = await client.PostAsJsonAsync("api/v1/clientes", novoCliente);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Cliente criado com sucesso!", Severity.Success);
+                dialogVisible = false;
+                await CarregarClientes();
+            }
+            else
+            {
+                Snackbar.Add("Erro ao criar cliente", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro: {ex.Message}", Severity.Error);
+        }
+    }
+
+    public class ClienteDto
+    {
+        public Guid Id { get; set; }
+        public string Nome { get; set; } = "";
+        public string CpfCnpj { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Telefone { get; set; } = "";
+    }
+
+    public class NovoClienteDto
+    {
+        public string Nome { get; set; } = "";
+        public string CpfCnpj { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Telefone { get; set; } = "";
+    }
+}

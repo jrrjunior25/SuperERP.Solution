@@ -1,0 +1,139 @@
+@page "/produtos"
+@rendermode InteractiveServer
+@inject IHttpClientFactory HttpClientFactory
+@inject ISnackbar Snackbar
+
+<PageTitle>Produtos - SuperERP</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Produtos</MudText>
+
+<MudCard>
+    <MudCardContent>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AbrirDialogNovo" StartIcon="@Icons.Material.Filled.Add">
+            Novo Produto
+        </MudButton>
+        
+        <MudTable Items="@produtos" Class="mt-4" Loading="@loading" Hover="true" Breakpoint="Breakpoint.Sm">
+            <HeaderContent>
+                <MudTh>SKU</MudTh>
+                <MudTh>Nome</MudTh>
+                <MudTh>Preço Venda</MudTh>
+                <MudTh>Estoque</MudTh>
+                <MudTh>Ações</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="SKU">@context.Sku</MudTd>
+                <MudTd DataLabel="Nome">@context.Nome</MudTd>
+                <MudTd DataLabel="Preço">@context.PrecoVenda.ToString("C")</MudTd>
+                <MudTd DataLabel="Estoque">@context.EstoqueAtual</MudTd>
+                <MudTd DataLabel="Ações">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudCardContent>
+</MudCard>
+
+<MudDialog @bind-Visible="dialogVisible" Options="dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Novo Produto</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="novoProduto.Sku" Label="SKU" Required="true" />
+        <MudTextField @bind-Value="novoProduto.Nome" Label="Nome" Required="true" Class="mt-3" />
+        <MudTextField @bind-Value="novoProduto.Descricao" Label="Descrição" Lines="3" Class="mt-3" />
+        <MudTextField @bind-Value="novoProduto.CodigoBarras" Label="Código de Barras" Class="mt-3" />
+        <MudNumericField @bind-Value="novoProduto.PrecoVenda" Label="Preço de Venda" Format="N2" Class="mt-3" />
+        <MudNumericField @bind-Value="novoProduto.PrecoCusto" Label="Preço de Custo" Format="N2" Class="mt-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="FecharDialog">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" OnClick="SalvarProduto">Salvar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<ProdutoDto> produtos = new();
+    private bool loading = false;
+    private bool dialogVisible = false;
+    private NovoProdutoDto novoProduto = new();
+    private DialogOptions dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarProdutos();
+    }
+
+    private async Task CarregarProdutos()
+    {
+        loading = true;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("SuperERP.API");
+            produtos = await client.GetFromJsonAsync<List<ProdutoDto>>("api/v1/produtos") ?? new();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro ao carregar produtos: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void AbrirDialogNovo()
+    {
+        novoProduto = new();
+        dialogVisible = true;
+    }
+
+    private void FecharDialog()
+    {
+        dialogVisible = false;
+    }
+
+    private async Task SalvarProduto()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("SuperERP.API");
+            var response = await client.PostAsJsonAsync("api/v1/produtos", novoProduto);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Produto criado com sucesso!", Severity.Success);
+                dialogVisible = false;
+                await CarregarProdutos();
+            }
+            else
+            {
+                Snackbar.Add("Erro ao criar produto", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro: {ex.Message}", Severity.Error);
+        }
+    }
+
+    public class ProdutoDto
+    {
+        public Guid Id { get; set; }
+        public string Sku { get; set; } = "";
+        public string Nome { get; set; } = "";
+        public decimal PrecoVenda { get; set; }
+        public decimal EstoqueAtual { get; set; }
+    }
+
+    public class NovoProdutoDto
+    {
+        public string Sku { get; set; } = "";
+        public string Nome { get; set; } = "";
+        public string? Descricao { get; set; }
+        public string? CodigoBarras { get; set; }
+        public decimal PrecoVenda { get; set; }
+        public decimal PrecoCusto { get; set; }
+    }
+}

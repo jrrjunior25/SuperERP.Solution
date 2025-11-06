@@ -1,0 +1,23 @@
+﻿FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+WORKDIR /app
+EXPOSE 8080
+
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+COPY ["src/Presentation/SuperERP.API/SuperERP.API.csproj", "src/Presentation/SuperERP.API/"]
+COPY ["src/Core/SuperERP.Application/SuperERP.Application.csproj", "src/Core/SuperERP.Application/"]
+COPY ["src/Core/SuperERP.Domain/SuperERP.Domain.csproj", "src/Core/SuperERP.Domain/"]
+COPY ["src/Infrastructure/SuperERP.Infrastructure/SuperERP.Infrastructure.csproj", "src/Infrastructure/SuperERP.Infrastructure/"]
+
+RUN dotnet restore "src/Presentation/SuperERP.API/SuperERP.API.csproj"
+COPY . .
+WORKDIR "/src/src/Presentation/SuperERP.API"
+RUN dotnet build "SuperERP.API.csproj" -c Release -o /app/build
+
+FROM build AS publish
+RUN dotnet publish "SuperERP.API.csproj" -c Release -o /app/publish
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "SuperERP.API.dll"]

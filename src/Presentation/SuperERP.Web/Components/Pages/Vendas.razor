@@ -1,0 +1,110 @@
+@page "/vendas"
+@rendermode InteractiveServer
+@inject IHttpClientFactory HttpClientFactory
+@inject ISnackbar Snackbar
+
+<PageTitle>Vendas - SuperERP</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Vendas</MudText>
+
+<MudCard>
+    <MudCardContent>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AbrirDialogNovo" StartIcon="@Icons.Material.Filled.Add">
+            Nova Venda
+        </MudButton>
+        
+        <MudTable Items="@vendas" Class="mt-4" Loading="@loading" Hover="true" Breakpoint="Breakpoint.Sm">
+            <HeaderContent>
+                <MudTh>Data</MudTh>
+                <MudTh>Cliente</MudTh>
+                <MudTh>Valor Total</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Ações</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Data">@context.DataVenda.ToString("dd/MM/yyyy")</MudTd>
+                <MudTd DataLabel="Cliente">@context.ClienteId</MudTd>
+                <MudTd DataLabel="Valor">@context.ValorTotal.ToString("C")</MudTd>
+                <MudTd DataLabel="Status">
+                    <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(context.Status)">@context.Status</MudChip>
+                </MudTd>
+                <MudTd DataLabel="Ações">
+                    <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Color="Color.Info" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Print" Size="Size.Small" Color="Color.Primary" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudCardContent>
+</MudCard>
+
+<MudDialog @bind-Visible="dialogVisible" Options="dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Nova Venda</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText>Funcionalidade em desenvolvimento...</MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="FecharDialog">Fechar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<VendaDto> vendas = new();
+    private bool loading = false;
+    private bool dialogVisible = false;
+    private DialogOptions dialogOptions = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarVendas();
+    }
+
+    private async Task CarregarVendas()
+    {
+        loading = true;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("SuperERP.API");
+            vendas = await client.GetFromJsonAsync<List<VendaDto>>("api/v1/vendas") ?? new();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro ao carregar vendas: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void AbrirDialogNovo()
+    {
+        dialogVisible = true;
+    }
+
+    private void FecharDialog()
+    {
+        dialogVisible = false;
+    }
+
+    private Color GetStatusColor(string status)
+    {
+        return status switch
+        {
+            "ABERTA" => Color.Warning,
+            "FINALIZADA" => Color.Success,
+            "CANCELADA" => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    public class VendaDto
+    {
+        public Guid Id { get; set; }
+        public Guid ClienteId { get; set; }
+        public DateTime DataVenda { get; set; }
+        public decimal ValorTotal { get; set; }
+        public string Status { get; set; } = "";
+    }
+}
