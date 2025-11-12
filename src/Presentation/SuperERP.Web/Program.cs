@@ -1,4 +1,5 @@
 using SuperERP.Web.Components;
+using SuperERP.Web.Services;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +13,9 @@ builder.Services.AddHttpClient("SuperERP.API", client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5000");
 });
+
+builder.Services.AddScoped<ApiService>();
+builder.Services.AddScoped<SuperERP.Web.Auth.AuthService>();
 
 var app = builder.Build();
 

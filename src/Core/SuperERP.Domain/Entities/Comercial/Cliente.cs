@@ -22,4 +22,13 @@ public class Cliente : EntityBase
         };
         return cliente;
     }
+
+    public void Atualizar(string nome, string cpfCnpj, string email, string telefone)
+    {
+        Nome = nome;
+        CpfCnpj = cpfCnpj;
+        Email = email;
+        Telefone = telefone;
+        AtualizadoEm = DateTime.UtcNow;
+    }
 }

@@ -1,0 +1,141 @@
+@page "/"
+@using SuperERP.PDV.Services
+@using SuperERP.PDV.Models
+@inject VendaService VendaService
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+@if (!AuthService.IsAuthenticated)
+{
+    Navigation.NavigateTo("/login");
+    return;
+}
+
+<div style="display: flex; height: 100vh; background: #f5f5f5;">
+    <!-- Área de Produtos -->
+    <div style="flex: 1; padding: 20px; overflow-y: auto;">
+        <h3 style="margin-bottom: 20px;">Produtos</h3>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;">
+            @foreach (var produto in produtos)
+            {
+                <div @onclick="() => AdicionarProduto(produto.Nome, produto.Preco)" 
+                     style="background: white; padding: 20px; border-radius: 8px; cursor: pointer; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s;"
+                     @onmouseover="@((MouseEventArgs e) => HoverCard(e, true))"
+                     @onmouseout="@((MouseEventArgs e) => HoverCard(e, false))">
+                    <div style="font-weight: bold; margin-bottom: 10px;">@produto.Nome</div>
+                    <div style="color: #667eea; font-size: 18px; font-weight: bold;">@produto.Preco.ToString("C2")</div>
+                </div>
+            }
+        </div>
+    </div>
+    
+    <!-- Área de Venda -->
+    <div style="width: 400px; background: white; padding: 20px; box-shadow: -2px 0 10px rgba(0,0,0,0.1); display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0;">Venda Atual</h3>
+            <button @onclick="Logout" style="padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                Sair
+            </button>
+        </div>
+        
+        <div style="flex: 1; overflow-y: auto; margin-bottom: 20px;">
+            @if (VendaService.Itens.Any())
+            {
+                @foreach (var item in VendaService.Itens)
+                {
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: bold;">@item.Produto</div>
+                            <div style="color: #666; font-size: 14px;">@item.Quantidade x @item.Preco.ToString("C2")</div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="font-weight: bold; color: #667eea;">@item.Subtotal.ToString("C2")</div>
+                            <button @onclick="() => RemoverItem(item)" style="background: #dc3545; color: white; border: none; border-radius: 3px; padding: 5px 10px; cursor: pointer;">
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div style="text-align: center; color: #999; padding: 40px;">
+                    Nenhum item adicionado
+                </div>
+            }
+        </div>
+        
+        <div style="border-top: 2px solid #eee; padding-top: 20px;">
+            <div style="display: flex; justify-content: space-between; font-size: 24px; font-weight: bold; margin-bottom: 20px;">
+                <span>TOTAL:</span>
+                <span style="color: #667eea;">@VendaService.Total.ToString("C2")</span>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <button @onclick="LimparVenda" style="padding: 15px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold;">
+                    Limpar
+                </button>
+                <button @onclick="FinalizarVenda" disabled="@(!VendaService.Itens.Any())" style="padding: 15px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold;">
+                    Finalizar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Produto> produtos = new()
+    {
+        new() { Nome = "Coca-Cola 2L", Preco = 8.50m },
+        new() { Nome = "Arroz 5kg", Preco = 25.90m },
+        new() { Nome = "Feijão 1kg", Preco = 7.80m },
+        new() { Nome = "Açúcar 1kg", Preco = 4.50m },
+        new() { Nome = "Café 500g", Preco = 12.90m },
+        new() { Nome = "Leite 1L", Preco = 5.20m },
+        new() { Nome = "Pão Francês", Preco = 0.80m },
+        new() { Nome = "Manteiga 500g", Preco = 15.90m }
+    };
+
+    private void AdicionarProduto(string nome, decimal preco)
+    {
+        VendaService.AdicionarItem(nome, preco);
+        StateHasChanged();
+    }
+
+    private void RemoverItem(ItemVenda item)
+    {
+        VendaService.RemoverItem(item);
+        StateHasChanged();
+    }
+
+    private void LimparVenda()
+    {
+        VendaService.LimparVenda();
+        StateHasChanged();
+    }
+
+    private void FinalizarVenda()
+    {
+        // Aqui integraria com impressora, NFC-e, etc
+        VendaService.LimparVenda();
+        StateHasChanged();
+    }
+
+    private void Logout()
+    {
+        AuthService.Logout();
+        Navigation.NavigateTo("/login");
+    }
+
+    private void HoverCard(MouseEventArgs e, bool hover)
+    {
+        // Efeito hover seria aplicado via CSS em produção
+    }
+
+    class Produto
+    {
+        public string Nome { get; set; } = string.Empty;
+        public decimal Preco { get; set; }
+    }
+}

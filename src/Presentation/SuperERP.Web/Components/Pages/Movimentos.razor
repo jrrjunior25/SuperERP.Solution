@@ -1,0 +1,62 @@
+@page "/movimentos"
+@rendermode InteractiveServer
+
+<PageTitle>Movimentos de Estoque - SuperERP</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Movimentos de Estoque</MudText>
+
+<MudCard>
+    <MudCardContent>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">
+            Novo Movimento
+        </MudButton>
+        
+        <MudTable Items="@movimentos" Class="mt-4" Hover="true" Breakpoint="Breakpoint.Sm">
+            <HeaderContent>
+                <MudTh>Data</MudTh>
+                <MudTh>Produto</MudTh>
+                <MudTh>Tipo</MudTh>
+                <MudTh>Quantidade</MudTh>
+                <MudTh>Usuário</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Data">@context.Data.ToString("dd/MM/yyyy HH:mm")</MudTd>
+                <MudTd DataLabel="Produto">@context.Produto</MudTd>
+                <MudTd DataLabel="Tipo">
+                    <MudChip Size="Size.Small" Color="@GetTipoColor(context.Tipo)">@context.Tipo</MudChip>
+                </MudTd>
+                <MudTd DataLabel="Quantidade">@context.Quantidade</MudTd>
+                <MudTd DataLabel="Usuário">@context.Usuario</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    private List<MovimentoDto> movimentos = new();
+
+    protected override void OnInitialized()
+    {
+        movimentos = new List<MovimentoDto>
+        {
+            new() { Data = DateTime.Now, Produto = "Produto Exemplo", Tipo = "Entrada", Quantidade = 10, Usuario = "Admin" }
+        };
+    }
+
+    private Color GetTipoColor(string tipo) => tipo switch
+    {
+        "Entrada" => Color.Success,
+        "Saída" => Color.Error,
+        "Ajuste" => Color.Warning,
+        _ => Color.Default
+    };
+
+    class MovimentoDto
+    {
+        public DateTime Data { get; set; }
+        public string Produto { get; set; } = string.Empty;
+        public string Tipo { get; set; } = string.Empty;
+        public int Quantidade { get; set; }
+        public string Usuario { get; set; } = string.Empty;
+    }
+}

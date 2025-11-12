@@ -11,7 +11,15 @@
         <MudText Typo="Typo.h5" Class="ml-3">SuperERP</MudText>
         <MudSpacer />
         <MudIconButton Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" />
-        <MudIconButton Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" />
+        @if (AuthService.IsAuthenticated)
+        {
+            <MudText Class="mr-2">@AuthService.UserName</MudText>
+            <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" OnClick="Logout" />
+        }
+        else
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.Login" Color="Color.Inherit" OnClick="@(() => Navigation.NavigateTo("/login"))" />
+        }
     </MudAppBar>
     
     <MudDrawer @bind-Open="@_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
@@ -25,11 +33,21 @@
     </MudMainContent>
 </MudLayout>
 
+@using SuperERP.Web.Auth
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
 @code {
     private bool _drawerOpen = true;
 
     void ToggleDrawer()
     {
         _drawerOpen = !_drawerOpen;
+    }
+
+    void Logout()
+    {
+        AuthService.Logout();
+        Navigation.NavigateTo("/login");
     }
 }

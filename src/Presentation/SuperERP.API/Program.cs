@@ -1,9 +1,17 @@
-﻿using SuperERP.API.Extensions;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Serilog;
+using SuperERP.API.Extensions;
 using SuperERP.API.Middleware;
 using SuperERP.Application;
 using SuperERP.Infrastructure;
+using SuperERP.Infrastructure.Services;
+using System.Text;
+
+LoggingService.ConfigureLogging();
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseSerilog();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -11,6 +19,21 @@ builder.Services.AddSwaggerConfiguration();
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? ""))
+        };
+    });
 
 builder.Services.AddCors(options =>
 {
@@ -20,6 +43,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+app.UseMiddleware<HealthCheckMiddleware>();
 app.UseMiddleware<TenantMiddleware>();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
@@ -35,7 +59,16 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-app.Run();
+try
+{
+    Log.Information("SuperERP API iniciada com sucesso");
+    app.Run();
+}
+finally
+{
+    Log.CloseAndFlush();
+}

@@ -1,0 +1,74 @@
+@page "/notas-fiscais"
+@rendermode InteractiveServer
+
+<PageTitle>Notas Fiscais - SuperERP</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Notas Fiscais</MudText>
+
+<MudCard>
+    <MudCardContent>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">
+            Emitir NF-e
+        </MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Add" Class="ml-2">
+            Emitir NFC-e
+        </MudButton>
+        
+        <MudTable Items="@notas" Class="mt-4" Hover="true" Breakpoint="Breakpoint.Sm">
+            <HeaderContent>
+                <MudTh>Número</MudTh>
+                <MudTh>Tipo</MudTh>
+                <MudTh>Cliente</MudTh>
+                <MudTh>Emissão</MudTh>
+                <MudTh>Valor</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Ações</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Número">@context.Numero</MudTd>
+                <MudTd DataLabel="Tipo">@context.Tipo</MudTd>
+                <MudTd DataLabel="Cliente">@context.Cliente</MudTd>
+                <MudTd DataLabel="Emissão">@context.DataEmissao.ToString("dd/MM/yyyy")</MudTd>
+                <MudTd DataLabel="Valor">@context.Valor.ToString("C2")</MudTd>
+                <MudTd DataLabel="Status">
+                    <MudChip Size="Size.Small" Color="@GetStatusColor(context.Status)">@context.Status</MudChip>
+                </MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Print" Size="Size.Small" Color="Color.Primary" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Download" Size="Size.Small" Color="Color.Info" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    private List<NotaFiscalDto> notas = new();
+
+    protected override void OnInitialized()
+    {
+        notas = new List<NotaFiscalDto>
+        {
+            new() { Numero = "000001", Tipo = "NF-e", Cliente = "Cliente Exemplo", DataEmissao = DateTime.Now, Valor = 1500.00m, Status = "Autorizada" }
+        };
+    }
+
+    private Color GetStatusColor(string status) => status switch
+    {
+        "Autorizada" => Color.Success,
+        "Pendente" => Color.Warning,
+        "Cancelada" => Color.Error,
+        "Rejeitada" => Color.Error,
+        _ => Color.Default
+    };
+
+    class NotaFiscalDto
+    {
+        public string Numero { get; set; } = string.Empty;
+        public string Tipo { get; set; } = string.Empty;
+        public string Cliente { get; set; } = string.Empty;
+        public DateTime DataEmissao { get; set; }
+        public decimal Valor { get; set; }
+        public string Status { get; set; } = string.Empty;
+    }
+}

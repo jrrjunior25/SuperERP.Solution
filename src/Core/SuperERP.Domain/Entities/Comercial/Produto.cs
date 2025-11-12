@@ -26,4 +26,14 @@ public class Produto : EntityBase
         };
         return produto;
     }
+
+    public void Atualizar(string nome, string descricao, string codigo, decimal precoVenda, decimal precoCusto)
+    {
+        Nome = nome;
+        Descricao = descricao;
+        Sku = codigo;
+        PrecoVenda = precoVenda;
+        PrecoCusto = precoCusto;
+        AtualizadoEm = DateTime.UtcNow;
+    }
 }

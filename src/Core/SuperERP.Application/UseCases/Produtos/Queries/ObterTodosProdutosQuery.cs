@@ -20,16 +20,7 @@ public class ObterTodosProdutosQueryHandler : IRequestHandler<ObterTodosProdutos
         var produtos = await _produtoRepository.GetAllAsync(cancellationToken);
         
         return produtos.Select(p => new ProdutoResponse(
-            p.Id,
-            p.Sku,
-            p.Nome,
-            p.Descricao,
-            p.CodigoBarras,
-            p.PrecoVenda,
-            p.PrecoCusto,
-            p.EstoqueAtual,
-            p.CriadoEm,
-            p.Ativo
+            p.Id, p.Nome, p.Descricao, p.Sku, p.PrecoVenda, p.PrecoCusto, (int)p.EstoqueAtual, p.Ativo
         )).ToList();
     }
 }

@@ -1,6 +1,8 @@
 @page "/vendas"
 @rendermode InteractiveServer
-@inject IHttpClientFactory HttpClientFactory
+@using SuperERP.Web.Models
+@using SuperERP.Web.Services
+@inject ApiService ApiService
 @inject ISnackbar Snackbar
 
 <PageTitle>Vendas - SuperERP</PageTitle>
@@ -23,7 +25,7 @@
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Data">@context.DataVenda.ToString("dd/MM/yyyy")</MudTd>
-                <MudTd DataLabel="Cliente">@context.ClienteId</MudTd>
+                <MudTd DataLabel="Cliente">@context.ClienteNome</MudTd>
                 <MudTd DataLabel="Valor">@context.ValorTotal.ToString("C")</MudTd>
                 <MudTd DataLabel="Status">
                     <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(context.Status)">@context.Status</MudChip>
@@ -42,22 +44,80 @@
         <MudText Typo="Typo.h6">Nova Venda</MudText>
     </TitleContent>
     <DialogContent>
-        <MudText>Funcionalidade em desenvolvimento...</MudText>
+        <MudSelect @bind-Value="novaVenda.ClienteId" Label="Cliente" Required="true">
+            @foreach (var cliente in clientes)
+            {
+                <MudSelectItem Value="@cliente.Id">@cliente.Nome</MudSelectItem>
+            }
+        </MudSelect>
+        
+        <MudText Typo="Typo.h6" Class="mt-4">Itens da Venda</MudText>
+        
+        @foreach (var item in novaVenda.Itens)
+        {
+            <MudPaper Class="pa-3 mt-2">
+                <MudGrid>
+                    <MudItem xs="5">
+                        <MudSelect @bind-Value="item.ProdutoId" Label="Produto">
+                            @foreach (var produto in produtos)
+                            {
+                                <MudSelectItem Value="@produto.Id">@produto.Nome</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="3">
+                        <MudNumericField @bind-Value="item.Quantidade" Label="Qtd" Min="1" />
+                    </MudItem>
+                    <MudItem xs="3">
+                        <MudNumericField @bind-Value="item.PrecoUnitario" Label="Preço" Format="N2" />
+                    </MudItem>
+                    <MudItem xs="1">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => RemoverItem(item))" />
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        }
+        
+        <MudButton StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary" OnClick="AdicionarItem" Class="mt-2">Adicionar Item</MudButton>
+        
+        <MudText Typo="Typo.h5" Class="mt-4">Total: @CalcularTotal().ToString("C2")</MudText>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="FecharDialog">Fechar</MudButton>
+        <MudButton OnClick="FecharDialog">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" OnClick="SalvarVenda">Finalizar Venda</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     private List<VendaDto> vendas = new();
+    private List<ClienteDto> clientes = new();
+    private List<ProdutoDto> produtos = new();
     private bool loading = false;
     private bool dialogVisible = false;
+    private CriarVendaRequest novaVenda = new();
     private DialogOptions dialogOptions = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
     protected override async Task OnInitializedAsync()
     {
-        await CarregarVendas();
+        await Task.WhenAll(CarregarVendas(), CarregarClientes(), CarregarProdutos());
+    }
+
+    private async Task CarregarClientes()
+    {
+        try
+        {
+            clientes = await ApiService.GetAsync<List<ClienteDto>>("api/v1/clientes") ?? new();
+        }
+        catch { }
+    }
+
+    private async Task CarregarProdutos()
+    {
+        try
+        {
+            produtos = await ApiService.GetAsync<List<ProdutoDto>>("api/v1/produtos") ?? new();
+        }
+        catch { }
     }
 
     private async Task CarregarVendas()
@@ -65,8 +125,7 @@
         loading = true;
         try
         {
-            var client = HttpClientFactory.CreateClient("SuperERP.API");
-            vendas = await client.GetFromJsonAsync<List<VendaDto>>("api/v1/vendas") ?? new();
+            vendas = await ApiService.GetAsync<List<VendaDto>>("api/v1/vendas") ?? new();
         }
         catch (Exception ex)
         {
@@ -80,7 +139,47 @@
 
     private void AbrirDialogNovo()
     {
+        novaVenda = new CriarVendaRequest();
+        novaVenda.Itens.Add(new ItemVendaRequest());
         dialogVisible = true;
+    }
+
+    private void AdicionarItem()
+    {
+        novaVenda.Itens.Add(new ItemVendaRequest());
+    }
+
+    private void RemoverItem(ItemVendaRequest item)
+    {
+        novaVenda.Itens.Remove(item);
+    }
+
+    private decimal CalcularTotal()
+    {
+        return novaVenda.Itens.Sum(i => i.Quantidade * i.PrecoUnitario);
+    }
+
+    private async Task SalvarVenda()
+    {
+        try
+        {
+            var response = await ApiService.PostAsync("api/v1/vendas", novaVenda);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Venda criada com sucesso!", Severity.Success);
+                dialogVisible = false;
+                await CarregarVendas();
+            }
+            else
+            {
+                Snackbar.Add("Erro ao criar venda", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro: {ex.Message}", Severity.Error);
+        }
     }
 
     private void FecharDialog()
@@ -99,12 +198,5 @@
         };
     }
 
-    public class VendaDto
-    {
-        public Guid Id { get; set; }
-        public Guid ClienteId { get; set; }
-        public DateTime DataVenda { get; set; }
-        public decimal ValorTotal { get; set; }
-        public string Status { get; set; } = "";
-    }
+
 }

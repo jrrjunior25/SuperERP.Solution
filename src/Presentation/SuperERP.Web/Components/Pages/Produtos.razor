@@ -1,6 +1,8 @@
 @page "/produtos"
 @rendermode InteractiveServer
-@inject IHttpClientFactory HttpClientFactory
+@using SuperERP.Web.Models
+@using SuperERP.Web.Services
+@inject ApiService ApiService
 @inject ISnackbar Snackbar
 
 <PageTitle>Produtos - SuperERP</PageTitle>
@@ -27,8 +29,8 @@
                 <MudTd DataLabel="Preço">@context.PrecoVenda.ToString("C")</MudTd>
                 <MudTd DataLabel="Estoque">@context.EstoqueAtual</MudTd>
                 <MudTd DataLabel="Ações">
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" />
-                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => AbrirDialogEditar(context))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => ExcluirProduto(context.Id))" />
                 </MudTd>
             </RowTemplate>
         </MudTable>
@@ -37,7 +39,7 @@
 
 <MudDialog @bind-Visible="dialogVisible" Options="dialogOptions">
     <TitleContent>
-        <MudText Typo="Typo.h6">Novo Produto</MudText>
+        <MudText Typo="Typo.h6">@(produtoEditando == null ? "Novo Produto" : "Editar Produto")</MudText>
     </TitleContent>
     <DialogContent>
         <MudTextField @bind-Value="novoProduto.Sku" Label="SKU" Required="true" />
@@ -58,6 +60,7 @@
     private bool loading = false;
     private bool dialogVisible = false;
     private NovoProdutoDto novoProduto = new();
+    private ProdutoDto? produtoEditando = null;
     private DialogOptions dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true };
 
     protected override async Task OnInitializedAsync()
@@ -70,8 +73,7 @@
         loading = true;
         try
         {
-            var client = HttpClientFactory.CreateClient("SuperERP.API");
-            produtos = await client.GetFromJsonAsync<List<ProdutoDto>>("api/v1/produtos") ?? new();
+            produtos = await ApiService.GetAsync<List<ProdutoDto>>("api/v1/produtos") ?? new();
         }
         catch (Exception ex)
         {
@@ -85,7 +87,20 @@
 
     private void AbrirDialogNovo()
     {
+        produtoEditando = null;
         novoProduto = new();
+        dialogVisible = true;
+    }
+
+    private void AbrirDialogEditar(ProdutoDto produto)
+    {
+        produtoEditando = produto;
+        novoProduto = new NovoProdutoDto
+        {
+            Sku = produto.Sku,
+            Nome = produto.Nome,
+            PrecoVenda = produto.PrecoVenda
+        };
         dialogVisible = true;
     }
 
@@ -98,18 +113,64 @@
     {
         try
         {
-            var client = HttpClientFactory.CreateClient("SuperERP.API");
-            var response = await client.PostAsJsonAsync("api/v1/produtos", novoProduto);
+            var request = new CriarProdutoRequest
+            {
+                Nome = novoProduto.Nome,
+                Descricao = novoProduto.Descricao ?? string.Empty,
+                Codigo = novoProduto.Sku,
+                PrecoVenda = novoProduto.PrecoVenda,
+                PrecoCusto = novoProduto.PrecoCusto,
+                QuantidadeEstoque = 0
+            };
+            
+            HttpResponseMessage response;
+            
+            if (produtoEditando == null)
+            {
+                response = await ApiService.PostAsync("api/v1/produtos", request);
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Produto criado com sucesso!", Severity.Success);
+                    dialogVisible = false;
+                    await CarregarProdutos();
+                }
+            }
+            else
+            {
+                response = await ApiService.PutAsync($"api/v1/produtos/{produtoEditando.Id}", request);
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Produto atualizado com sucesso!", Severity.Success);
+                    dialogVisible = false;
+                    await CarregarProdutos();
+                }
+            }
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Erro ao salvar produto", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task ExcluirProduto(Guid id)
+    {
+        try
+        {
+            var response = await ApiService.DeleteAsync($"api/v1/produtos/{id}");
             
             if (response.IsSuccessStatusCode)
             {
-                Snackbar.Add("Produto criado com sucesso!", Severity.Success);
-                dialogVisible = false;
+                Snackbar.Add("Produto excluído com sucesso!", Severity.Success);
                 await CarregarProdutos();
             }
             else
             {
-                Snackbar.Add("Erro ao criar produto", Severity.Error);
+                Snackbar.Add("Erro ao excluir produto", Severity.Error);
             }
         }
         catch (Exception ex)

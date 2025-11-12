@@ -1,6 +1,8 @@
 @page "/clientes"
 @rendermode InteractiveServer
-@inject IHttpClientFactory HttpClientFactory
+@using SuperERP.Web.Models
+@using SuperERP.Web.Services
+@inject ApiService ApiService
 @inject ISnackbar Snackbar
 
 <PageTitle>Clientes - SuperERP</PageTitle>
@@ -27,8 +29,8 @@
                 <MudTd DataLabel="Email">@context.Email</MudTd>
                 <MudTd DataLabel="Telefone">@context.Telefone</MudTd>
                 <MudTd DataLabel="Ações">
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" />
-                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => AbrirDialogEditar(context))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => ExcluirCliente(context.Id))" />
                 </MudTd>
             </RowTemplate>
         </MudTable>
@@ -37,7 +39,7 @@
 
 <MudDialog @bind-Visible="dialogVisible">
     <TitleContent>
-        <MudText Typo="Typo.h6">Novo Cliente</MudText>
+        <MudText Typo="Typo.h6">@(clienteEditando == null ? "Novo Cliente" : "Editar Cliente")</MudText>
     </TitleContent>
     <DialogContent>
         <MudTextField @bind-Value="novoCliente.Nome" Label="Nome" Required="true" />
@@ -55,7 +57,8 @@
     private List<ClienteDto> clientes = new();
     private bool loading = false;
     private bool dialogVisible = false;
-    private NovoClienteDto novoCliente = new();
+    private CriarClienteRequest novoCliente = new();
+    private ClienteDto? clienteEditando = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -67,8 +70,7 @@
         loading = true;
         try
         {
-            var client = HttpClientFactory.CreateClient("SuperERP.API");
-            clientes = await client.GetFromJsonAsync<List<ClienteDto>>("api/v1/clientes") ?? new();
+            clientes = await ApiService.GetAsync<List<ClienteDto>>("api/v1/clientes") ?? new();
         }
         catch (Exception ex)
         {
@@ -82,7 +84,21 @@
 
     private void AbrirDialogNovo()
     {
+        clienteEditando = null;
         novoCliente = new();
+        dialogVisible = true;
+    }
+
+    private void AbrirDialogEditar(ClienteDto cliente)
+    {
+        clienteEditando = cliente;
+        novoCliente = new CriarClienteRequest
+        {
+            Nome = cliente.Nome,
+            CpfCnpj = cliente.CpfCnpj,
+            Email = cliente.Email,
+            Telefone = cliente.Telefone
+        };
         dialogVisible = true;
     }
 
@@ -95,18 +111,32 @@
     {
         try
         {
-            var client = HttpClientFactory.CreateClient("SuperERP.API");
-            var response = await client.PostAsJsonAsync("api/v1/clientes", novoCliente);
+            HttpResponseMessage response;
             
-            if (response.IsSuccessStatusCode)
+            if (clienteEditando == null)
             {
-                Snackbar.Add("Cliente criado com sucesso!", Severity.Success);
-                dialogVisible = false;
-                await CarregarClientes();
+                response = await ApiService.PostAsync("api/v1/clientes", novoCliente);
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Cliente criado com sucesso!", Severity.Success);
+                    dialogVisible = false;
+                    await CarregarClientes();
+                }
             }
             else
             {
-                Snackbar.Add("Erro ao criar cliente", Severity.Error);
+                response = await ApiService.PutAsync($"api/v1/clientes/{clienteEditando.Id}", novoCliente);
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Cliente atualizado com sucesso!", Severity.Success);
+                    dialogVisible = false;
+                    await CarregarClientes();
+                }
+            }
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Erro ao salvar cliente", Severity.Error);
             }
         }
         catch (Exception ex)
@@ -115,20 +145,25 @@
         }
     }
 
-    public class ClienteDto
+    private async Task ExcluirCliente(Guid id)
     {
-        public Guid Id { get; set; }
-        public string Nome { get; set; } = "";
-        public string CpfCnpj { get; set; } = "";
-        public string Email { get; set; } = "";
-        public string Telefone { get; set; } = "";
-    }
-
-    public class NovoClienteDto
-    {
-        public string Nome { get; set; } = "";
-        public string CpfCnpj { get; set; } = "";
-        public string Email { get; set; } = "";
-        public string Telefone { get; set; } = "";
+        try
+        {
+            var response = await ApiService.DeleteAsync($"api/v1/clientes/{id}");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Cliente excluído com sucesso!", Severity.Success);
+                await CarregarClientes();
+            }
+            else
+            {
+                Snackbar.Add("Erro ao excluir cliente", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro: {ex.Message}", Severity.Error);
+        }
     }
 }

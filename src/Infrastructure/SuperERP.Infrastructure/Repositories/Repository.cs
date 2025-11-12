@@ -20,7 +20,7 @@ public class Repository<T> : IRepository<T> where T : class
         return await _dbSet.FindAsync([id], cancellationToken);
     }
 
-    public virtual async Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken = default)
+    public virtual async Task<List<T>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return await _dbSet.ToListAsync(cancellationToken);
     }
@@ -46,5 +46,11 @@ public class Repository<T> : IRepository<T> where T : class
             _dbSet.Remove(entity);
             await _context.SaveChangesAsync(cancellationToken);
         }
+    }
+
+    public virtual async Task DeleteAsync(T entity, CancellationToken cancellationToken = default)
+    {
+        _dbSet.Remove(entity);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }

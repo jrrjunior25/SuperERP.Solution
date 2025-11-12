@@ -1,0 +1,105 @@
+@page "/relatorios"
+@rendermode InteractiveServer
+@using SuperERP.Web.Services
+@inject ApiService ApiService
+
+<PageTitle>Relatórios - SuperERP</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Relatórios</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="4">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.h6">Total de Vendas</MudText>
+                <MudText Typo="Typo.h3" Color="Color.Primary">@totalVendas</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    
+    <MudItem xs="12" md="4">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.h6">Valor Total</MudText>
+                <MudText Typo="Typo.h3" Color="Color.Success">@valorTotal.ToString("C2")</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    
+    <MudItem xs="12" md="4">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.h6">Ticket Médio</MudText>
+                <MudText Typo="Typo.h3" Color="Color.Info">@ticketMedio.ToString("C2")</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    
+    <MudItem xs="12">
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Vendas por Período</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudTable Items="@vendas" Hover="true">
+                    <HeaderContent>
+                        <MudTh>Data</MudTh>
+                        <MudTh>Quantidade</MudTh>
+                        <MudTh>Valor</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>@context.Data.ToString("dd/MM/yyyy")</MudTd>
+                        <MudTd>@context.Quantidade</MudTd>
+                        <MudTd>@context.Valor.ToString("C2")</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private int totalVendas = 0;
+    private decimal valorTotal = 0;
+    private decimal ticketMedio = 0;
+    private List<VendaDia> vendas = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarRelatorio();
+    }
+
+    private async Task CarregarRelatorio()
+    {
+        try
+        {
+            var response = await ApiService.GetAsync<RelatorioResponse>("api/v1/relatorios/vendas");
+            
+            if (response != null)
+            {
+                totalVendas = response.TotalVendas;
+                valorTotal = response.ValorTotal;
+                ticketMedio = response.TicketMedio;
+                vendas = response.VendasPorDia;
+            }
+        }
+        catch { }
+    }
+
+    class RelatorioResponse
+    {
+        public int TotalVendas { get; set; }
+        public decimal ValorTotal { get; set; }
+        public decimal TicketMedio { get; set; }
+        public List<VendaDia> VendasPorDia { get; set; } = new();
+    }
+
+    class VendaDia
+    {
+        public DateTime Data { get; set; }
+        public int Quantidade { get; set; }
+        public decimal Valor { get; set; }
+    }
+}

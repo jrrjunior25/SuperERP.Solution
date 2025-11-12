@@ -39,6 +39,18 @@ public class Venda : EntityBase
     {
         ValorTotal = _itens.Sum(i => i.ValorTotal);
     }
+
+    public void Finalizar()
+    {
+        Status = "FINALIZADA";
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Cancelar()
+    {
+        Status = "CANCELADA";
+        AtualizadoEm = DateTime.UtcNow;
+    }
 }
 
 public class ItemVenda

@@ -20,13 +20,7 @@ public class ObterTodosClientesQueryHandler : IRequestHandler<ObterTodosClientes
         var clientes = await _clienteRepository.GetAllAsync(cancellationToken);
         
         return clientes.Select(c => new ClienteResponse(
-            c.Id,
-            c.Nome,
-            c.CpfCnpj,
-            c.Email,
-            c.Telefone,
-            c.CriadoEm,
-            c.Ativo
+            c.Id, c.Nome, c.CpfCnpj, c.Email, c.Telefone, c.CriadoEm, c.Ativo
         )).ToList();
     }
 }

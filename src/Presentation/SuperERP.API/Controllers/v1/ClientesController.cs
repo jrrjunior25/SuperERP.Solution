@@ -25,11 +25,35 @@ public class ClientesController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("{id}")]
+    public async Task<IActionResult> ObterCliente(Guid id, CancellationToken cancellationToken)
+    {
+        var query = new ObterClientePorIdQuery(id);
+        var result = await _mediator.Send(query, cancellationToken);
+        return result != null ? Ok(result) : NotFound();
+    }
+
     [HttpPost]
     public async Task<IActionResult> CriarCliente([FromBody] CriarClienteRequest request, CancellationToken cancellationToken)
     {
         var command = new CriarClienteCommand(request);
         var result = await _mediator.Send(command, cancellationToken);
-        return CreatedAtAction(nameof(CriarCliente), new { id = result.Id }, result);
+        return CreatedAtAction(nameof(ObterCliente), new { id = result.Id }, result);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> AtualizarCliente(Guid id, [FromBody] CriarClienteRequest request, CancellationToken cancellationToken)
+    {
+        var command = new AtualizarClienteCommand(id, request);
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> ExcluirCliente(Guid id, CancellationToken cancellationToken)
+    {
+        var command = new ExcluirClienteCommand(id);
+        await _mediator.Send(command, cancellationToken);
+        return NoContent();
     }
 }

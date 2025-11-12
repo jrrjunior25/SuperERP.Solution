@@ -25,11 +25,35 @@ public class ProdutosController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("{id}")]
+    public async Task<IActionResult> ObterProduto(Guid id, CancellationToken cancellationToken)
+    {
+        var query = new ObterProdutoPorIdQuery(id);
+        var result = await _mediator.Send(query, cancellationToken);
+        return result != null ? Ok(result) : NotFound();
+    }
+
     [HttpPost]
     public async Task<IActionResult> CriarProduto([FromBody] CriarProdutoRequest request, CancellationToken cancellationToken)
     {
         var command = new CriarProdutoCommand(request);
         var result = await _mediator.Send(command, cancellationToken);
-        return CreatedAtAction(nameof(CriarProduto), new { id = result.Id }, result);
+        return CreatedAtAction(nameof(ObterProduto), new { id = result.Id }, result);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> AtualizarProduto(Guid id, [FromBody] CriarProdutoRequest request, CancellationToken cancellationToken)
+    {
+        var command = new AtualizarProdutoCommand(id, request);
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> ExcluirProduto(Guid id, CancellationToken cancellationToken)
+    {
+        var command = new ExcluirProdutoCommand(id);
+        await _mediator.Send(command, cancellationToken);
+        return NoContent();
     }
 }

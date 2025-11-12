@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using SuperERP.PDV.Services;
 
 namespace SuperERP.PDV;
 
@@ -15,6 +16,10 @@ public static class MauiProgram
 			});
 
 		builder.Services.AddMauiBlazorWebView();
+
+		// Services
+		builder.Services.AddSingleton<AuthService>();
+		builder.Services.AddSingleton<VendaService>();
 
 #if DEBUG
 		builder.Services.AddBlazorWebViewDeveloperTools();
