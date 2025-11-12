@@ -1,141 +1,523 @@
-@page "/"
+@page "/venda"
 @using SuperERP.PDV.Services
 @using SuperERP.PDV.Models
-@inject VendaService VendaService
 @inject AuthService AuthService
+@inject CaixaService CaixaService
+@inject ProdutoService ProdutoService
+@inject VendaPDVService VendaService
 @inject NavigationManager Navigation
+@implements IDisposable
 
-@if (!AuthService.IsAuthenticated)
-{
-    Navigation.NavigateTo("/login");
-    return;
-}
+<div class="venda-container">
+    @if (CaixaService.CaixaAtual == null || !CaixaService.CaixaAtual.Aberto)
+    {
+        <div class="caixa-fechado">
+            <h2>⚠️ Caixa Fechado</h2>
+            <p>É necessário abrir o caixa para realizar vendas</p>
+            <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo("/caixa")'>Abrir Caixa</button>
+        </div>
+    }
+    else
+    {
+        <div class="venda-header">
+            <div class="header-info">
+                <h2>🛒 Nova Venda</h2>
+                <span>Operador: @AuthService.UserName</span>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" @onclick='() => Navigation.NavigateTo("/caixa")'>💰 Caixa</button>
+                <button class="btn btn-danger" @onclick="Sair">🚪 Sair</button>
+            </div>
+        </div>
 
-<div style="display: flex; height: 100vh; background: #f5f5f5;">
-    <!-- Área de Produtos -->
-    <div style="flex: 1; padding: 20px; overflow-y: auto;">
-        <h3 style="margin-bottom: 20px;">Produtos</h3>
-        
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;">
-            @foreach (var produto in produtos)
-            {
-                <div @onclick="() => AdicionarProduto(produto.Nome, produto.Preco)" 
-                     style="background: white; padding: 20px; border-radius: 8px; cursor: pointer; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s;"
-                     @onmouseover="@((MouseEventArgs e) => HoverCard(e, true))"
-                     @onmouseout="@((MouseEventArgs e) => HoverCard(e, false))">
-                    <div style="font-weight: bold; margin-bottom: 10px;">@produto.Nome</div>
-                    <div style="color: #667eea; font-size: 18px; font-weight: bold;">@produto.Preco.ToString("C2")</div>
+        <div class="venda-content">
+            <div class="produtos-section">
+                <div class="busca-produto">
+                    <input type="text" @bind="codigoBusca" @bind:event="oninput" @onkeypress="HandleBuscaKeyPress" 
+                           class="form-control" placeholder="Digite o código de barras ou busque o produto" />
                 </div>
-            }
-        </div>
-    </div>
-    
-    <!-- Área de Venda -->
-    <div style="width: 400px; background: white; padding: 20px; box-shadow: -2px 0 10px rgba(0,0,0,0.1); display: flex; flex-direction: column;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3 style="margin: 0;">Venda Atual</h3>
-            <button @onclick="Logout" style="padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                Sair
-            </button>
-        </div>
-        
-        <div style="flex: 1; overflow-y: auto; margin-bottom: 20px;">
-            @if (VendaService.Itens.Any())
-            {
-                @foreach (var item in VendaService.Itens)
+
+                <div class="produtos-grid">
+                    @foreach (var produto in produtosFiltrados)
+                    {
+                        <div class="produto-card" @onclick="() => AdicionarProduto(produto)">
+                            <div class="produto-nome">@produto.Nome</div>
+                            <div class="produto-preco">R$ @produto.Preco.ToString("N2")</div>
+                            <div class="produto-estoque">Estoque: @produto.EstoqueAtual</div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="carrinho-section">
+                <div class="carrinho-header">
+                    <h3>Carrinho</h3>
+                    @if (VendaService.ItensCarrinho.Any())
+                    {
+                        <button class="btn btn-sm btn-danger" @onclick="LimparCarrinho">Limpar</button>
+                    }
+                </div>
+
+                <div class="carrinho-itens">
+                    @if (!VendaService.ItensCarrinho.Any())
+                    {
+                        <div class="carrinho-vazio">
+                            <p>🛒 Carrinho vazio</p>
+                            <small>Adicione produtos para iniciar a venda</small>
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var item in VendaService.ItensCarrinho)
+                        {
+                            <div class="carrinho-item">
+                                <div class="item-info">
+                                    <div class="item-nome">@item.Produto</div>
+                                    <div class="item-preco">R$ @item.Preco.ToString("N2")</div>
+                                </div>
+                                <div class="item-actions">
+                                    <button class="btn-qty" @onclick="() => AlterarQuantidade(item, -1)">-</button>
+                                    <span class="item-qty">@item.Quantidade</span>
+                                    <button class="btn-qty" @onclick="() => AlterarQuantidade(item, 1)">+</button>
+                                    <button class="btn-remove" @onclick="() => RemoverItem(item)">🗑️</button>
+                                </div>
+                                <div class="item-subtotal">R$ @item.Subtotal.ToString("N2")</div>
+                            </div>
+                        }
+                    }
+                </div>
+
+                <div class="carrinho-total">
+                    <div class="total-label">TOTAL</div>
+                    <div class="total-valor">R$ @VendaService.TotalVenda.ToString("N2")</div>
+                </div>
+
+                @if (VendaService.ItensCarrinho.Any())
                 {
-                    <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                        <div style="flex: 1;">
-                            <div style="font-weight: bold;">@item.Produto</div>
-                            <div style="color: #666; font-size: 14px;">@item.Quantidade x @item.Preco.ToString("C2")</div>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <div style="font-weight: bold; color: #667eea;">@item.Subtotal.ToString("C2")</div>
-                            <button @onclick="() => RemoverItem(item)" style="background: #dc3545; color: white; border: none; border-radius: 3px; padding: 5px 10px; cursor: pointer;">
-                                ✕
-                            </button>
-                        </div>
+                    <div class="pagamento-section">
+                        <select @bind="formaPagamento" class="form-control">
+                            <option value="Dinheiro">💵 Dinheiro</option>
+                            <option value="Débito">💳 Débito</option>
+                            <option value="Crédito">💳 Crédito</option>
+                            <option value="PIX">📱 PIX</option>
+                        </select>
+
+                        <button class="btn btn-success btn-finalizar" @onclick="FinalizarVenda" disabled="@processando">
+                            @if (processando)
+                            {
+                                <span>Processando...</span>
+                            }
+                            else
+                            {
+                                <span>✅ Finalizar Venda</span>
+                            }
+                        </button>
                     </div>
                 }
-            }
-            else
-            {
-                <div style="text-align: center; color: #999; padding: 40px;">
-                    Nenhum item adicionado
+            </div>
+        </div>
+
+        @if (mostrarMensagem)
+        {
+            <div class="modal-overlay" @onclick="FecharMensagem">
+                <div class="modal-box @(mensagemSucesso ? "success" : "error")" @onclick:stopPropagation>
+                    <h3>@(mensagemSucesso ? "✅ Sucesso!" : "❌ Erro")</h3>
+                    <p>@mensagem</p>
+                    <button class="btn btn-primary" @onclick="FecharMensagem">OK</button>
                 </div>
-            }
-        </div>
-        
-        <div style="border-top: 2px solid #eee; padding-top: 20px;">
-            <div style="display: flex; justify-content: space-between; font-size: 24px; font-weight: bold; margin-bottom: 20px;">
-                <span>TOTAL:</span>
-                <span style="color: #667eea;">@VendaService.Total.ToString("C2")</span>
             </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <button @onclick="LimparVenda" style="padding: 15px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold;">
-                    Limpar
-                </button>
-                <button @onclick="FinalizarVenda" disabled="@(!VendaService.Itens.Any())" style="padding: 15px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold;">
-                    Finalizar
-                </button>
-            </div>
-        </div>
-    </div>
+        }
+    }
 </div>
 
-@code {
-    private List<Produto> produtos = new()
-    {
-        new() { Nome = "Coca-Cola 2L", Preco = 8.50m },
-        new() { Nome = "Arroz 5kg", Preco = 25.90m },
-        new() { Nome = "Feijão 1kg", Preco = 7.80m },
-        new() { Nome = "Açúcar 1kg", Preco = 4.50m },
-        new() { Nome = "Café 500g", Preco = 12.90m },
-        new() { Nome = "Leite 1L", Preco = 5.20m },
-        new() { Nome = "Pão Francês", Preco = 0.80m },
-        new() { Nome = "Manteiga 500g", Preco = 15.90m }
-    };
+<style>
+    .venda-container {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        background: #f5f5f5;
+    }
 
-    private void AdicionarProduto(string nome, decimal preco)
+    .caixa-fechado {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        text-align: center;
+    }
+
+    .caixa-fechado h2 {
+        font-size: 2rem;
+        margin-bottom: 20px;
+    }
+
+    .venda-header {
+        background: white;
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .header-info h2 {
+        margin: 0 0 5px 0;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .venda-content {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 20px;
+        padding: 20px;
+        overflow: hidden;
+    }
+
+    .produtos-section {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .busca-produto input {
+        width: 100%;
+        padding: 15px;
+        font-size: 18px;
+        border: 2px solid #ddd;
+        border-radius: 10px;
+    }
+
+    .produtos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+        overflow-y: auto;
+        padding: 10px;
+    }
+
+    .produto-card {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .produto-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    .produto-nome {
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    .produto-preco {
+        font-size: 1.5rem;
+        color: #28a745;
+        font-weight: bold;
+    }
+
+    .produto-estoque {
+        font-size: 0.9rem;
+        color: #666;
+        margin-top: 5px;
+    }
+
+    .carrinho-section {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .carrinho-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #eee;
+    }
+
+    .carrinho-itens {
+        flex: 1;
+        overflow-y: auto;
+        margin-bottom: 20px;
+    }
+
+    .carrinho-vazio {
+        text-align: center;
+        padding: 40px 20px;
+        color: #999;
+    }
+
+    .carrinho-item {
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .item-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+
+    .item-nome {
+        font-weight: 600;
+    }
+
+    .item-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 5px;
+    }
+
+    .btn-qty {
+        width: 35px;
+        height: 35px;
+        border: none;
+        background: #007bff;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 18px;
+    }
+
+    .item-qty {
+        min-width: 30px;
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .btn-remove {
+        margin-left: auto;
+        border: none;
+        background: #dc3545;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .item-subtotal {
+        text-align: right;
+        font-weight: bold;
+        color: #28a745;
+    }
+
+    .carrinho-total {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .total-label {
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+
+    .total-valor {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #28a745;
+    }
+
+    .pagamento-section {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .btn-finalizar {
+        padding: 20px;
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .btn-primary { background: #007bff; color: white; }
+    .btn-secondary { background: #6c757d; color: white; }
+    .btn-success { background: #28a745; color: white; }
+    .btn-danger { background: #dc3545; color: white; }
+    .btn-sm { padding: 5px 10px; font-size: 0.9rem; }
+
+    .btn:hover:not(:disabled) {
+        opacity: 0.9;
+        transform: translateY(-2px);
+    }
+
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .form-control {
+        padding: 12px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-size: 16px;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .modal-box {
+        background: white;
+        padding: 40px;
+        border-radius: 15px;
+        text-align: center;
+        min-width: 400px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+
+    .modal-box.success h3 { color: #28a745; }
+    .modal-box.error h3 { color: #dc3545; }
+</style>
+
+@code {
+    private List<ProdutoLocal> produtos = new();
+    private List<ProdutoLocal> produtosFiltrados = new();
+    private string codigoBusca = "";
+    private string formaPagamento = "Dinheiro";
+    private bool processando = false;
+    private bool mostrarMensagem = false;
+    private string mensagem = "";
+    private bool mensagemSucesso = false;
+
+    protected override async Task OnInitializedAsync()
     {
-        VendaService.AdicionarItem(nome, preco);
-        StateHasChanged();
+        if (!AuthService.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/", true);
+            return;
+        }
+
+        await CaixaService.CarregarCaixaAbertoAsync();
+        await ProdutoService.InicializarProdutosPadraoAsync();
+        produtos = await ProdutoService.ObterTodosAsync();
+        produtosFiltrados = produtos;
+
+        VendaService.OnVendaChanged += StateHasChanged;
+    }
+
+    private void FiltrarProdutos()
+    {
+        if (string.IsNullOrWhiteSpace(codigoBusca))
+        {
+            produtosFiltrados = produtos;
+        }
+        else
+        {
+            var busca = codigoBusca.ToLower();
+            produtosFiltrados = produtos.Where(p => 
+                p.Nome.ToLower().Contains(busca) || 
+                p.CodigoBarras.Contains(busca)
+            ).ToList();
+        }
+    }
+
+    private async Task HandleBuscaKeyPress(KeyboardEventArgs e)
+    {
+        FiltrarProdutos();
+
+        if (e.Key == "Enter" && produtosFiltrados.Count == 1)
+        {
+            AdicionarProduto(produtosFiltrados[0]);
+            codigoBusca = "";
+            produtosFiltrados = produtos;
+        }
+    }
+
+    private void AdicionarProduto(ProdutoLocal produto)
+    {
+        VendaService.AdicionarItem(produto, 1);
+    }
+
+    private void AlterarQuantidade(ItemVenda item, int delta)
+    {
+        VendaService.AlterarQuantidade(item, item.Quantidade + delta);
     }
 
     private void RemoverItem(ItemVenda item)
     {
         VendaService.RemoverItem(item);
-        StateHasChanged();
     }
 
-    private void LimparVenda()
+    private void LimparCarrinho()
     {
-        VendaService.LimparVenda();
-        StateHasChanged();
+        VendaService.LimparCarrinho();
     }
 
-    private void FinalizarVenda()
+    private async Task FinalizarVenda()
     {
-        // Aqui integraria com impressora, NFC-e, etc
-        VendaService.LimparVenda();
-        StateHasChanged();
+        processando = true;
+
+        try
+        {
+            var (sucesso, msg) = await VendaService.FinalizarVendaAsync(formaPagamento);
+            mensagem = msg;
+            mensagemSucesso = sucesso;
+            mostrarMensagem = true;
+
+            if (sucesso)
+            {
+                codigoBusca = "";
+                produtosFiltrados = produtos;
+            }
+        }
+        finally
+        {
+            processando = false;
+        }
     }
 
-    private void Logout()
+    private void FecharMensagem()
+    {
+        mostrarMensagem = false;
+    }
+
+    private void Sair()
     {
         AuthService.Logout();
-        Navigation.NavigateTo("/login");
+        Navigation.NavigateTo("/", true);
     }
 
-    private void HoverCard(MouseEventArgs e, bool hover)
+    public void Dispose()
     {
-        // Efeito hover seria aplicado via CSS em produção
-    }
-
-    class Produto
-    {
-        public string Nome { get; set; } = string.Empty;
-        public decimal Preco { get; set; }
+        VendaService.OnVendaChanged -= StateHasChanged;
     }
 }

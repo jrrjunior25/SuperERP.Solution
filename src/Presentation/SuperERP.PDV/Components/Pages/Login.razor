@@ -1,65 +1,196 @@
-@page "/login"
+@page "/"
 @using SuperERP.PDV.Services
 @inject AuthService AuthService
 @inject NavigationManager Navigation
 
-<div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-    <div style="background: white; padding: 40px; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); width: 400px;">
-        <h2 style="text-align: center; margin-bottom: 30px; color: #333;">SuperERP PDV</h2>
-        
-        <div style="margin-bottom: 20px;">
-            <label style="display: block; margin-bottom: 5px; color: #555;">Usuário</label>
-            <input @bind="usuario" type="text" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px;" />
+<div class="login-container">
+    <div class="login-box">
+        <div class="login-header">
+            <h1>🏪 SuperERP PDV</h1>
+            <p>Sistema de Ponto de Venda</p>
         </div>
-        
-        <div style="margin-bottom: 20px;">
-            <label style="display: block; margin-bottom: 5px; color: #555;">Senha</label>
-            <input @bind="senha" type="password" @onkeypress="HandleKeyPress" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px;" />
-        </div>
-        
-        @if (!string.IsNullOrEmpty(erro))
-        {
-            <div style="background: #fee; color: #c33; padding: 10px; border-radius: 5px; margin-bottom: 20px; text-align: center;">
-                @erro
+
+        <div class="login-form">
+            <div class="form-group">
+                <label>Usuário</label>
+                <input type="text" @bind="usuario" class="form-control" placeholder="Digite o usuário" @onkeypress="HandleKeyPress" />
             </div>
-        }
-        
-        <button @onclick="HandleLogin" style="width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold;">
-            Entrar
-        </button>
-        
-        <p style="text-align: center; margin-top: 20px; color: #999; font-size: 14px;">
-            Demo: pdv / pdv123
-        </p>
+
+            <div class="form-group">
+                <label>Senha</label>
+                <input type="password" @bind="senha" class="form-control" placeholder="Digite a senha" @onkeypress="HandleKeyPress" />
+            </div>
+
+            @if (!string.IsNullOrEmpty(mensagemErro))
+            {
+                <div class="alert alert-danger">@mensagemErro</div>
+            }
+
+            <button class="btn btn-primary btn-block" @onclick="Entrar" disabled="@processando">
+                @if (processando)
+                {
+                    <span>Entrando...</span>
+                }
+                else
+                {
+                    <span>Entrar</span>
+                }
+            </button>
+
+            <div class="login-info">
+                <small>Usuário: <strong>pdv</strong> | Senha: <strong>pdv123</strong></small>
+            </div>
+        </div>
     </div>
 </div>
 
-@code {
-    private string usuario = "pdv";
-    private string senha = "pdv123";
-    private string erro = string.Empty;
+<style>
+    .login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
 
-    private async Task HandleLogin()
+    .login-box {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        width: 100%;
+        max-width: 450px;
+        padding: 40px;
+    }
+
+    .login-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .login-header h1 {
+        font-size: 2.5rem;
+        margin: 0 0 10px 0;
+        color: #333;
+    }
+
+    .login-header p {
+        color: #666;
+        margin: 0;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.3s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .btn-block {
+        width: 100%;
+    }
+
+    .alert {
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .alert-danger {
+        background-color: #fee;
+        color: #c33;
+        border: 1px solid #fcc;
+    }
+
+    .login-info {
+        text-align: center;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #e0e0e0;
+    }
+
+    .login-info small {
+        color: #666;
+    }
+</style>
+
+@code {
+    private string usuario = "";
+    private string senha = "";
+    private string mensagemErro = "";
+    private bool processando = false;
+
+    private async Task Entrar()
     {
-        erro = string.Empty;
-        
-        var success = await AuthService.LoginAsync(usuario, senha);
-        
-        if (success)
+        mensagemErro = "";
+        processando = true;
+
+        try
         {
-            Navigation.NavigateTo("/");
+            var sucesso = await AuthService.LoginAsync(usuario, senha);
+
+            if (sucesso)
+            {
+                Navigation.NavigateTo("/venda", true);
+            }
+            else
+            {
+                mensagemErro = "Usuário ou senha inválidos";
+            }
         }
-        else
+        finally
         {
-            erro = "Usuário ou senha inválidos";
+            processando = false;
         }
     }
 
     private async Task HandleKeyPress(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter")
+        if (e.Key == "Enter" && !processando)
         {
-            await HandleLogin();
+            await Entrar();
         }
     }
 }

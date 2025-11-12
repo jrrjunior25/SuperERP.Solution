@@ -24,7 +24,7 @@
                 <MudTd DataLabel="Cliente">@context.Cliente</MudTd>
                 <MudTd DataLabel="Valor">@context.Valor.ToString("C2")</MudTd>
                 <MudTd DataLabel="Status">
-                    <MudChip Size="Size.Small" Color="@GetStatusColor(context.Status)">@context.Status</MudChip>
+                    <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(context.Status)">@context.Status</MudChip>
                 </MudTd>
                 <MudTd>
                     <MudIconButton Icon="@Icons.Material.Filled.Payment" Size="Size.Small" Color="Color.Success" />

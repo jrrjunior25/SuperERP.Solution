@@ -23,12 +23,12 @@ public class AtualizarProdutoUseCase : IRequestHandler<AtualizarProdutoCommand, 
         if (produto == null)
             throw new Exception("Produto não encontrado");
 
-        produto.Atualizar(request.Request.Nome, request.Request.Descricao, request.Request.Codigo, 
+        produto.Atualizar(request.Request.Nome, request.Request.Descricao, request.Request.Sku, 
             request.Request.PrecoVenda, request.Request.PrecoCusto);
         
         await _produtoRepository.UpdateAsync(produto, cancellationToken);
 
-        return new ProdutoResponse(produto.Id, produto.Nome, produto.Descricao, produto.Codigo, 
-            produto.PrecoVenda, produto.PrecoCusto, produto.QuantidadeEstoque, produto.Ativo);
+        return new ProdutoResponse(produto.Id, produto.Sku, produto.Nome, produto.Descricao, produto.CodigoBarras, 
+            produto.PrecoVenda, produto.PrecoCusto, produto.EstoqueAtual, produto.CriadoEm, produto.Ativo);
     }
 }

@@ -1,0 +1,12 @@
+/* Dark Theme */
+[data-theme="dark"] {
+    --mud-palette-primary: #667eea;
+    --mud-palette-background: #1a1a1a;
+    --mud-palette-surface: #2d2d2d;
+    --mud-palette-text-primary: #ffffff;
+}
+
+[data-theme="dark"] body {
+    background-color: #1a1a1a;
+    color: #ffffff;
+}

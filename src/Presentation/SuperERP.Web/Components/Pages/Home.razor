@@ -1,6 +1,5 @@
 @page "/"
 @rendermode InteractiveServer
-@using ApexCharts
 @using SuperERP.Web.Services
 @inject ApiService ApiService
 
@@ -55,14 +54,16 @@
                 </CardHeaderContent>
             </MudCardHeader>
             <MudCardContent>
-                <ApexChart TItem="VendaDia" Title="Vendas">
-                    <ApexPointSeries TItem="VendaDia"
-                                     Items="vendasSemana"
-                                     Name="Vendas"
-                                     SeriesType="SeriesType.Bar"
-                                     XValue="@(e => e.Dia)"
-                                     YValue="@(e => (decimal)e.Valor)" />
-                </ApexChart>
+                <MudText Typo="Typo.body1">Gráfico de vendas dos últimos 7 dias</MudText>
+                <div style="margin-top: 20px;">
+                    @foreach (var venda in vendasSemana)
+                    {
+                        <div style="margin-bottom: 10px;">
+                            <MudText>@venda.Dia: @venda.Valor.ToString("C2")</MudText>
+                            <MudProgressLinear Color="Color.Primary" Value="@((double)venda.Valor / 3500 * 100)" />
+                        </div>
+                    }
+                </div>
             </MudCardContent>
         </MudCard>
     </MudItem>

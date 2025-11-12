@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: supererp-postgres
+    environment:
+      POSTGRES_DB: supererp
+      POSTGRES_USER: supererp
+      POSTGRES_PASSWORD: SuperERP@2025!
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U supererp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: supererp-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: supererp
+      RABBITMQ_DEFAULT_PASS: SuperERP@2025!
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

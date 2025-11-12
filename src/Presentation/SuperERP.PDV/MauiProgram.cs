@@ -18,14 +18,24 @@ public static class MauiProgram
 		builder.Services.AddMauiBlazorWebView();
 
 		// Services
+		builder.Services.AddSingleton<DatabaseService>();
 		builder.Services.AddSingleton<AuthService>();
-		builder.Services.AddSingleton<VendaService>();
+		builder.Services.AddSingleton<CaixaService>();
+		builder.Services.AddSingleton<ProdutoService>();
+		builder.Services.AddSingleton<VendaPDVService>();
+		builder.Services.AddSingleton<MainPage>();
 
 #if DEBUG
 		builder.Services.AddBlazorWebViewDeveloperTools();
 		builder.Logging.AddDebug();
 #endif
 
-		return builder.Build();
+		var app = builder.Build();
+
+		// Inicializar banco de dados
+		var dbService = app.Services.GetRequiredService<DatabaseService>();
+		Task.Run(async () => await dbService.InicializarAsync()).Wait();
+
+		return app;
 	}
 }

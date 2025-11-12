@@ -23,7 +23,7 @@
                 <MudTd DataLabel="Data">@context.Data.ToString("dd/MM/yyyy HH:mm")</MudTd>
                 <MudTd DataLabel="Produto">@context.Produto</MudTd>
                 <MudTd DataLabel="Tipo">
-                    <MudChip Size="Size.Small" Color="@GetTipoColor(context.Tipo)">@context.Tipo</MudChip>
+                    <MudChip T="string" Size="Size.Small" Color="@GetTipoColor(context.Tipo)">@context.Tipo</MudChip>
                 </MudTd>
                 <MudTd DataLabel="Quantidade">@context.Quantidade</MudTd>
                 <MudTd DataLabel="Usuário">@context.Usuario</MudTd>
