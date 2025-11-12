@@ -1,0 +1,122 @@
+@page "/finalizar-venda/{VendaId:guid}"
+@inject IVendaService VendaService
+@inject NavigationManager Navigation
+
+<PageTitle>Finalizar Venda</PageTitle>
+
+<div class="container">
+    <h3>Finalizar Venda</h3>
+
+    @if (processando)
+    {
+        <div class="alert alert-info">
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Processando venda e emitindo NFC-e...
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(erro))
+    {
+        <div class="alert alert-danger">
+            @erro
+        </div>
+    }
+
+    @if (sucesso)
+    {
+        <div class="alert alert-success">
+            <h4>✅ Venda Finalizada com Sucesso!</h4>
+            <p><strong>Valor Total:</strong> @valorTotal.ToString("C2")</p>
+            @if (!string.IsNullOrEmpty(chaveNFCe))
+            {
+                <p><strong>NFC-e:</strong> @chaveNFCe</p>
+                <button class="btn btn-primary" @onclick="ImprimirNFCe">
+                    🖨️ Imprimir NFC-e
+                </button>
+            }
+            <button class="btn btn-success mt-2" @onclick="NovaVenda">
+                Nova Venda
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Forma de Pagamento</label>
+                    <select class="form-select" @bind="formaPagamento">
+                        <option value="DINHEIRO">💵 Dinheiro</option>
+                        <option value="PIX">🟢 PIX</option>
+                        <option value="DEBITO">💳 Débito</option>
+                        <option value="CREDITO">💳 Crédito</option>
+                    </select>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" @bind="emitirNFCe" id="emitirNFCe">
+                    <label class="form-check-label" for="emitirNFCe">
+                        Emitir NFC-e
+                    </label>
+                </div>
+
+                <button class="btn btn-success btn-lg w-100" @onclick="Finalizar" disabled="@processando">
+                    ✅ Finalizar Venda
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public Guid VendaId { get; set; }
+
+    private string formaPagamento = "DINHEIRO";
+    private bool emitirNFCe = true;
+    private bool processando = false;
+    private bool sucesso = false;
+    private string? erro;
+    private string? chaveNFCe;
+    private decimal valorTotal;
+
+    private async Task Finalizar()
+    {
+        processando = true;
+        erro = null;
+
+        try
+        {
+            var resultado = await VendaService.FinalizarVendaAsync(VendaId, formaPagamento, emitirNFCe);
+
+            if (resultado.Sucesso)
+            {
+                sucesso = true;
+                chaveNFCe = resultado.ChaveNFCe;
+                valorTotal = resultado.ValorTotal;
+            }
+            else
+            {
+                erro = resultado.Erro ?? "Erro ao finalizar venda";
+            }
+        }
+        catch (Exception ex)
+        {
+            erro = $"Erro: {ex.Message}";
+        }
+        finally
+        {
+            processando = false;
+        }
+    }
+
+    private void ImprimirNFCe()
+    {
+        // Implementar impressão NFC-e
+    }
+
+    private void NovaVenda()
+    {
+        Navigation.NavigateTo("/");
+    }
+}

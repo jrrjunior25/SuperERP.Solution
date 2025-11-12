@@ -1,40 +1,50 @@
-using SuperERP.PDV.Models;
+using System.Net.Http.Json;
 
 namespace SuperERP.PDV.Services;
 
-public class VendaService
+public interface IVendaService
 {
-    private readonly List<ItemVenda> _itens = new();
+    Task<FinalizarVendaResponse> FinalizarVendaAsync(Guid vendaId, string formaPagamento, bool emitirNFCe = true);
+}
 
-    public List<ItemVenda> Itens => _itens;
-    public decimal Total => _itens.Sum(i => i.Subtotal);
+public class VendaService : IVendaService
+{
+    private readonly HttpClient _httpClient;
 
-    public void AdicionarItem(string produto, decimal preco, int quantidade = 1)
+    public VendaService(HttpClient httpClient)
     {
-        var item = _itens.FirstOrDefault(i => i.Produto == produto);
-        
-        if (item != null)
+        _httpClient = httpClient;
+    }
+
+    public async Task<FinalizarVendaResponse> FinalizarVendaAsync(Guid vendaId, string formaPagamento, bool emitirNFCe = true)
+    {
+        var request = new
         {
-            item.Quantidade += quantidade;
-        }
-        else
+            empresaId = Guid.Parse("00000000-0000-0000-0000-000000000001"),
+            formaPagamento,
+            emitirNFCe
+        };
+
+        var response = await _httpClient.PostAsJsonAsync($"/api/vendas/{vendaId}/finalizar", request);
+
+        if (!response.IsSuccessStatusCode)
         {
-            _itens.Add(new ItemVenda
-            {
-                Produto = produto,
-                Preco = preco,
-                Quantidade = quantidade
-            });
+            var error = await response.Content.ReadAsStringAsync();
+            return new FinalizarVendaResponse { Sucesso = false, Erro = error };
         }
-    }
 
-    public void RemoverItem(ItemVenda item)
-    {
-        _itens.Remove(item);
+        return await response.Content.ReadFromJsonAsync<FinalizarVendaResponse>() 
+            ?? new FinalizarVendaResponse { Sucesso = false, Erro = "Resposta inválida" };
     }
+}
 
-    public void LimparVenda()
-    {
-        _itens.Clear();
-    }
+public class FinalizarVendaResponse
+{
+    public bool Sucesso { get; set; }
+    public bool VendaFinalizada { get; set; }
+    public Guid VendaId { get; set; }
+    public string? ChaveNFCe { get; set; }
+    public string? XmlNFCe { get; set; }
+    public decimal ValorTotal { get; set; }
+    public string? Erro { get; set; }
 }

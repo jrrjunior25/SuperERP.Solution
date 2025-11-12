@@ -1,0 +1,187 @@
+/* SuperERP - Custom Styles */
+
+:root {
+    --primary-color: #1976d2;
+    --success-color: #4caf50;
+    --warning-color: #ff9800;
+    --error-color: #f44336;
+    --info-color: #2196f3;
+}
+
+/* Cards */
+.mud-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.mud-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15) !important;
+}
+
+.rounded-lg {
+    border-radius: 12px !important;
+}
+
+/* Typography */
+.fw-bold {
+    font-weight: 700 !important;
+}
+
+.fw-semibold {
+    font-weight: 600 !important;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Dashboard Cards */
+.dashboard-card {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #1565c0 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 24px;
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.status-warning {
+    background-color: #fff3e0;
+    color: #e65100;
+}
+
+.status-error {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+.status-info {
+    background-color: #e3f2fd;
+    color: #1565c0;
+}
+
+/* Tables */
+.mud-table-container {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.mud-table-row:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Buttons */
+.mud-button-root {
+    text-transform: none !important;
+    font-weight: 500;
+}
+
+/* Sidebar */
+.mud-drawer {
+    background: linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%);
+}
+
+.mud-nav-link {
+    border-radius: 8px;
+    margin: 4px 8px;
+    transition: all 0.2s ease-in-out;
+}
+
+.mud-nav-link:hover {
+    background-color: rgba(25, 118, 210, 0.08);
+    transform: translateX(4px);
+}
+
+.mud-nav-link.active {
+    background-color: rgba(25, 118, 210, 0.12);
+    font-weight: 600;
+}
+
+/* AppBar */
+.mud-appbar {
+    background: linear-gradient(90deg, #1976d2 0%, #1565c0 100%);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Progress */
+.mud-progress-linear {
+    border-radius: 8px;
+    height: 8px !important;
+}
+
+/* Charts */
+.mud-chart {
+    border-radius: 8px;
+}
+
+/* Responsive */
+@media (max-width: 960px) {
+    .mud-container {
+        padding: 12px;
+    }
+}
+
+/* Loading */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Print */
+@media print {
+    .mud-appbar,
+    .mud-drawer,
+    .no-print {
+        display: none !important;
+    }
+}

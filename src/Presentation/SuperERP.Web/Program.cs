@@ -7,11 +7,27 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddMudServices();
+builder.Services.AddMudServices(config =>
+{
+    config.SnackbarConfiguration.PositionClass = MudBlazor.Defaults.Classes.Position.BottomRight;
+    config.SnackbarConfiguration.PreventDuplicates = false;
+    config.SnackbarConfiguration.NewestOnTop = true;
+    config.SnackbarConfiguration.ShowCloseIcon = true;
+    config.SnackbarConfiguration.VisibleStateDuration = 3000;
+});
 
 builder.Services.AddHttpClient("SuperERP.API", client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5000");
+    var envBase = Environment.GetEnvironmentVariable("SUPERERP_API_BASE_URL");
+    var configBase = builder.Configuration["ApiSettings:BaseUrl"];
+    var baseUrl = !string.IsNullOrWhiteSpace(envBase)
+        ? envBase
+        : !string.IsNullOrWhiteSpace(configBase)
+            ? configBase
+            : "http://localhost:5277/";
+
+    if (!baseUrl.EndsWith("/")) baseUrl += "/";
+    client.BaseAddress = new Uri(baseUrl);
 });
 
 builder.Services.AddScoped<ApiService>();

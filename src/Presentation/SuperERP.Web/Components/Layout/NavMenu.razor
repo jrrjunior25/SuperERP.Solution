@@ -1,24 +1,61 @@
 <MudNavMenu>
-    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
+    <div class="pa-4">
+        <MudText Typo="Typo.h6" Class="fw-bold">SuperERP</MudText>
+        <MudText Typo="Typo.caption">Sistema de Gestão</MudText>
+    </div>
+    
+    <MudDivider Class="mb-2" />
+    
+    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">
+        <MudText Typo="Typo.body2">Dashboard</MudText>
+    </MudNavLink>
     
     <MudNavGroup Title="Comercial" Icon="@Icons.Material.Filled.ShoppingCart" Expanded="true">
-        <MudNavLink Href="/clientes" Icon="@Icons.Material.Filled.People">Clientes</MudNavLink>
-        <MudNavLink Href="/produtos" Icon="@Icons.Material.Filled.Inventory">Produtos</MudNavLink>
-        <MudNavLink Href="/vendas" Icon="@Icons.Material.Filled.PointOfSale">Vendas</MudNavLink>
+        <MudNavLink Href="/clientes" Icon="@Icons.Material.Filled.People">
+            <MudText Typo="Typo.body2">Clientes</MudText>
+        </MudNavLink>
+        <MudNavLink Href="/produtos" Icon="@Icons.Material.Filled.Inventory">
+            <MudText Typo="Typo.body2">Produtos</MudText>
+        </MudNavLink>
+        <MudNavLink Href="/vendas" Icon="@Icons.Material.Filled.PointOfSale">
+            <MudText Typo="Typo.body2">Vendas</MudText>
+        </MudNavLink>
     </MudNavGroup>
     
     <MudNavGroup Title="Financeiro" Icon="@Icons.Material.Filled.AttachMoney">
-        <MudNavLink Href="/contas-receber" Icon="@Icons.Material.Filled.TrendingUp">Contas a Receber</MudNavLink>
-        <MudNavLink Href="/contas-pagar" Icon="@Icons.Material.Filled.TrendingDown">Contas a Pagar</MudNavLink>
+        <MudNavLink Href="/contas-receber" Icon="@Icons.Material.Filled.TrendingUp">
+            <MudText Typo="Typo.body2">Contas a Receber</MudText>
+        </MudNavLink>
+        <MudNavLink Href="/contas-pagar" Icon="@Icons.Material.Filled.TrendingDown">
+            <MudText Typo="Typo.body2">Contas a Pagar</MudText>
+        </MudNavLink>
+        <MudNavLink Href="/pix" Icon="@Icons.Material.Filled.QrCode2">
+            <MudText Typo="Typo.body2">PIX</MudText>
+        </MudNavLink>
     </MudNavGroup>
     
     <MudNavGroup Title="Estoque" Icon="@Icons.Material.Filled.Warehouse">
-        <MudNavLink Href="/movimentos" Icon="@Icons.Material.Filled.SwapHoriz">Movimentos</MudNavLink>
+        <MudNavLink Href="/movimentos" Icon="@Icons.Material.Filled.SwapHoriz">
+            <MudText Typo="Typo.body2">Movimentos</MudText>
+        </MudNavLink>
     </MudNavGroup>
     
     <MudNavGroup Title="Fiscal" Icon="@Icons.Material.Filled.Receipt">
-        <MudNavLink Href="/notas-fiscais" Icon="@Icons.Material.Filled.Description">Notas Fiscais</MudNavLink>
+        <MudNavLink Href="/nfce" Icon="@Icons.Material.Filled.Receipt">
+            <MudText Typo="Typo.body2">NFC-e</MudText>
+        </MudNavLink>
+        <MudNavLink Href="/notas-fiscais" Icon="@Icons.Material.Filled.Description">
+            <MudText Typo="Typo.body2">NF-e</MudText>
+        </MudNavLink>
     </MudNavGroup>
     
-    <MudNavLink Href="/relatorios" Icon="@Icons.Material.Filled.Assessment">Relatórios</MudNavLink>
+    <MudNavLink Href="/relatorios" Icon="@Icons.Material.Filled.Assessment">
+        <MudText Typo="Typo.body2">Relatórios</MudText>
+    </MudNavLink>
+    
+    <MudDivider Class="my-2" />
+    
+    <MudNavLink Href="/configuracoes" Icon="@Icons.Material.Filled.Settings">
+        <MudText Typo="Typo.body2">Configurações</MudText>
+    </MudNavLink>
 </MudNavMenu>

@@ -50,14 +50,17 @@ SuperERP.Solution/
 - Docker Desktop (opcional)
 - PostgreSQL (ou use o Docker)
 
-### Opção 1: Execução Local
+### Opção 1: Execução Rápida
 
 \\\powershell
-# Build do projeto
-.\build-scripts\build.ps1
+# Iniciar tudo (API + Web)
+.\run-all.ps1
 
-# Executar a API
-.\build-scripts\run.ps1
+# Ou modo desenvolvimento (hot reload)
+.\run-dev.ps1
+
+# Parar tudo
+.\stop-all.ps1
 \\\
 
 ### Opção 2: Docker Compose

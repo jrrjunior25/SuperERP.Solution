@@ -5,41 +5,68 @@
 
 <PageTitle>Dashboard - SuperERP</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-4">Dashboard</MudText>
+<div class="d-flex justify-space-between align-center mb-4">
+    <MudText Typo="Typo.h4">📊 Dashboard</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh" OnClick="CarregarDados">Atualizar</MudButton>
+</div>
 
 <MudGrid>
     <MudItem xs="12" sm="6" md="3">
-        <MudCard Elevation="2">
+        <MudCard Elevation="2" Class="pa-4">
             <MudCardContent>
-                <MudText Typo="Typo.h6">Vendas Hoje</MudText>
-                <MudText Typo="Typo.h3" Color="Color.Primary">@vendasHoje.ToString("C2")</MudText>
+                <div class="d-flex justify-space-between align-center">
+                    <div>
+                        <MudText Typo="Typo.body2" Color="Color.Default">Vendas Hoje</MudText>
+                        <MudText Typo="Typo.h4" Color="Color.Primary" Class="mt-2">@vendasHoje.ToString("C2")</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Success">+12% vs ontem</MudText>
+                    </div>
+                    <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Large" Color="Color.Primary" />
+                </div>
             </MudCardContent>
         </MudCard>
     </MudItem>
     
     <MudItem xs="12" sm="6" md="3">
-        <MudCard Elevation="2">
+        <MudCard Elevation="2" Class="pa-4">
             <MudCardContent>
-                <MudText Typo="Typo.h6">Clientes</MudText>
-                <MudText Typo="Typo.h3" Color="Color.Success">@totalClientes</MudText>
+                <div class="d-flex justify-space-between align-center">
+                    <div>
+                        <MudText Typo="Typo.body2" Color="Color.Default">Clientes Ativos</MudText>
+                        <MudText Typo="Typo.h4" Color="Color.Success" Class="mt-2">@totalClientes</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Success">+5 este mês</MudText>
+                    </div>
+                    <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Color="Color.Success" />
+                </div>
             </MudCardContent>
         </MudCard>
     </MudItem>
     
     <MudItem xs="12" sm="6" md="3">
-        <MudCard Elevation="2">
+        <MudCard Elevation="2" Class="pa-4">
             <MudCardContent>
-                <MudText Typo="Typo.h6">Produtos</MudText>
-                <MudText Typo="Typo.h3" Color="Color.Info">@totalProdutos</MudText>
+                <div class="d-flex justify-space-between align-center">
+                    <div>
+                        <MudText Typo="Typo.body2" Color="Color.Default">Produtos</MudText>
+                        <MudText Typo="Typo.h4" Color="Color.Info" Class="mt-2">@totalProdutos</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Default">Em estoque</MudText>
+                    </div>
+                    <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Large" Color="Color.Info" />
+                </div>
             </MudCardContent>
         </MudCard>
     </MudItem>
     
     <MudItem xs="12" sm="6" md="3">
-        <MudCard Elevation="2">
+        <MudCard Elevation="2" Class="pa-4">
             <MudCardContent>
-                <MudText Typo="Typo.h6">Contas a Receber</MudText>
-                <MudText Typo="Typo.h3" Color="Color.Warning">@contasReceber.ToString("C2")</MudText>
+                <div class="d-flex justify-space-between align-center">
+                    <div>
+                        <MudText Typo="Typo.body2" Color="Color.Default">A Receber</MudText>
+                        <MudText Typo="Typo.h4" Color="Color.Warning" Class="mt-2">@contasReceber.ToString("C2")</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Warning">Vence em 30 dias</MudText>
+                    </div>
+                    <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Size="Size.Large" Color="Color.Warning" />
+                </div>
             </MudCardContent>
         </MudCard>
     </MudItem>

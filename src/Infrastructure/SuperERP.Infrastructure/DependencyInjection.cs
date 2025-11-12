@@ -5,7 +5,7 @@ using SuperERP.Domain.Interfaces;
 using SuperERP.Domain.Interfaces.Repositories;
 using SuperERP.Infrastructure.Data;
 using SuperERP.Infrastructure.Data.Context;
-using SuperERP.Infrastructure.Integrations.NFe;
+using SuperERP.Infrastructure.Integrations.Fiscal;
 using SuperERP.Infrastructure.Integrations.Pagamento;
 using SuperERP.Infrastructure.Integrations.TEF;
 using SuperERP.Infrastructure.Messaging;
@@ -27,6 +27,11 @@ public static class DependencyInjection
         services.AddScoped<IClienteRepository, ClienteRepository>();
         services.AddScoped<IProdutoRepository, ProdutoRepository>();
         services.AddScoped<IVendaRepository, VendaRepository>();
+        services.AddScoped<Application.UseCases.Vendas.IVendaRepository, VendaRepository>();
+        services.AddScoped<Application.UseCases.Vendas.IEmpresaRepository, Repositories.EmpresaRepository>();
+        services.AddScoped<Application.UseCases.Vendas.INFeRepositoryApp, Repositories.NFeRepository>();
+        services.AddScoped<Repositories.INFeRepository, Repositories.NFeRepository>();
+        services.AddScoped<Repositories.IPixRepository, Repositories.PixRepository>();
         
         services.AddScoped<ITenantService, TenantService>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -50,7 +55,19 @@ public static class DependencyInjection
             new LocalStorageService(configuration["Storage:BasePath"] ?? "./uploads"));
         
         // Integrations
-        services.AddScoped<INFeService, NFeService>();
+        services.AddHttpClient();
+        
+        services.AddSingleton(new Integrations.Fiscal.ACBrConfig { Homologacao = true });
+        services.AddSingleton(new Integrations.Pagamentos.GerencianetConfig 
+        { 
+            ClientId = configuration["Gerencianet:ClientId"] ?? "",
+            ClientSecret = configuration["Gerencianet:ClientSecret"] ?? "",
+            ChavePix = configuration["Gerencianet:ChavePix"] ?? "",
+            Homologacao = bool.Parse(configuration["Gerencianet:Homologacao"] ?? "true")
+        });
+        
+        services.AddScoped<Domain.Interfaces.INFeService, Integrations.Fiscal.ACBrNFeService>();
+        services.AddScoped<Domain.Interfaces.IPixService, Integrations.Pagamentos.GerencianetPixService>();
         services.AddScoped<ITEFService, TEFService>();
         services.AddScoped<IPagamentoService, PagamentoService>();
 

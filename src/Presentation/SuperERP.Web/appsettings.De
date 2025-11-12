@@ -1,0 +1,6 @@
+velopment.json
+{
+  "ApiSettings": {
+    "BaseUrl": "http://localhost:5277/"
+  }
+}

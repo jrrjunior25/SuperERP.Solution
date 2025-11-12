@@ -1,0 +1,208 @@
+@page "/nfce"
+@inject HttpClient Http
+
+<PageTitle>NFC-e - Notas Fiscais</PageTitle>
+
+<h3>📄 NFC-e - Notas Fiscais Eletrônicas</h3>
+
+<div class="row mb-3">
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5>Autorizadas</h5>
+                <h2>@notasAutorizadas</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h5>Pendentes</h5>
+                <h2>@notasPendentes</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-danger">
+            <div class="card-body">
+                <h5>Rejeitadas</h5>
+                <h2>@notasRejeitadas</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-secondary">
+            <div class="card-body">
+                <h5>Canceladas</h5>
+                <h2>@notasCanceladas</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="row">
+            <div class="col">
+                <h5>Lista de NFC-e</h5>
+            </div>
+            <div class="col text-end">
+                <button class="btn btn-primary" @onclick="CarregarNotas">
+                    🔄 Atualizar
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        @if (carregando)
+        {
+            <div class="text-center">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+            </div>
+        }
+        else if (notas.Any())
+        {
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Número</th>
+                        <th>Série</th>
+                        <th>Data Emissão</th>
+                        <th>Valor</th>
+                        <th>Status</th>
+                        <th>Chave Acesso</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var nota in notas)
+                    {
+                        <tr>
+                            <td>@nota.Numero</td>
+                            <td>@nota.Serie</td>
+                            <td>@nota.DataEmissao.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@nota.ValorTotal.ToString("C2")</td>
+                            <td>
+                                <span class="badge bg-@GetStatusColor(nota.Status)">
+                                    @nota.Status
+                                </span>
+                            </td>
+                            <td>
+                                <small>@(nota.ChaveAcesso ?? "-")</small>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-info" @onclick="() => VisualizarNota(nota)">
+                                    👁️ Ver
+                                </button>
+                                @if (nota.Status == "AUTORIZADA")
+                                {
+                                    <button class="btn btn-sm btn-primary" @onclick="() => ImprimirNota(nota)">
+                                        🖨️ Imprimir
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                Nenhuma NFC-e encontrada.
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<NFCeDto> notas = new();
+    private bool carregando = false;
+    private int notasAutorizadas = 0;
+    private int notasPendentes = 0;
+    private int notasRejeitadas = 0;
+    private int notasCanceladas = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarNotas();
+    }
+
+    private async Task CarregarNotas()
+    {
+        carregando = true;
+        try
+        {
+            // Simular chamada API
+            await Task.Delay(500);
+            
+            notas = new List<NFCeDto>
+            {
+                new NFCeDto
+                {
+                    Id = Guid.NewGuid(),
+                    Numero = "1",
+                    Serie = "1",
+                    DataEmissao = DateTime.Now.AddHours(-2),
+                    ValorTotal = 150.00m,
+                    Status = "AUTORIZADA",
+                    ChaveAcesso = "35250112345678000190650010000000011234567890"
+                },
+                new NFCeDto
+                {
+                    Id = Guid.NewGuid(),
+                    Numero = "2",
+                    Serie = "1",
+                    DataEmissao = DateTime.Now.AddHours(-1),
+                    ValorTotal = 89.90m,
+                    Status = "AUTORIZADA",
+                    ChaveAcesso = "35250112345678000190650010000000021234567891"
+                }
+            };
+
+            notasAutorizadas = notas.Count(n => n.Status == "AUTORIZADA");
+            notasPendentes = notas.Count(n => n.Status == "PENDENTE");
+            notasRejeitadas = notas.Count(n => n.Status == "REJEITADA");
+            notasCanceladas = notas.Count(n => n.Status == "CANCELADA");
+        }
+        finally
+        {
+            carregando = false;
+        }
+    }
+
+    private string GetStatusColor(string status)
+    {
+        return status switch
+        {
+            "AUTORIZADA" => "success",
+            "PENDENTE" => "warning",
+            "REJEITADA" => "danger",
+            "CANCELADA" => "secondary",
+            _ => "info"
+        };
+    }
+
+    private void VisualizarNota(NFCeDto nota)
+    {
+        // Implementar visualização
+    }
+
+    private void ImprimirNota(NFCeDto nota)
+    {
+        // Implementar impressão
+    }
+
+    public class NFCeDto
+    {
+        public Guid Id { get; set; }
+        public string Numero { get; set; } = string.Empty;
+        public string Serie { get; set; } = string.Empty;
+        public DateTime DataEmissao { get; set; }
+        public decimal ValorTotal { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public string? ChaveAcesso { get; set; }
+    }
+}
