@@ -9,4 +9,5 @@ public interface ICaixaAppService : IAppServiceBase
     Task<SessaoCaixaDto> AbrirSessao(AbrirSessaoCaixaDto dto);
     Task<PdvVendaDto> RegistrarVenda(RegistrarVendaDto dto);
     Task<PdvVendaDto> RegistrarPagamento(RegistrarPagamentoDto dto);
+    Task<ResumoFechamentoDto> FecharSessao(FecharSessaoDto dto);
 }

@@ -1,7 +1,9 @@
 @page "/produtos"
-@rendermode InteractiveServer
-@inject IHttpClientFactory HttpClientFactory
+@using SuperERP.Application.Dtos
+@using SuperERP.Application.Interfaces
+@inject IProdutoAppService ProdutoService
 @inject ISnackbar Snackbar
+@inject IDialogService DialogService
 
 <PageTitle>Produtos - SuperERP</PageTitle>
 
@@ -9,11 +11,11 @@
 
 <MudCard>
     <MudCardContent>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AbrirDialogNovo" StartIcon="@Icons.Material.Filled.Add">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => OpenDialog(null))" StartIcon="@Icons.Material.Filled.Add">
             Novo Produto
         </MudButton>
         
-        <MudTable Items="@produtos" Class="mt-4" Loading="@loading" Hover="true" Breakpoint="Breakpoint.Sm">
+        <MudTable Items="@_produtos" Class="mt-4" Loading="@_loading" Hover="true" Breakpoint="Breakpoint.Sm">
             <HeaderContent>
                 <MudTh>SKU</MudTh>
                 <MudTh>Nome</MudTh>
@@ -27,51 +29,29 @@
                 <MudTd DataLabel="Preço">@context.PrecoVenda.ToString("C")</MudTd>
                 <MudTd DataLabel="Estoque">@context.EstoqueAtual</MudTd>
                 <MudTd DataLabel="Ações">
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" />
-                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => OpenDialog(context))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => OnDelete(context.Id))" />
                 </MudTd>
             </RowTemplate>
         </MudTable>
     </MudCardContent>
 </MudCard>
 
-<MudDialog @bind-Visible="dialogVisible" Options="dialogOptions">
-    <TitleContent>
-        <MudText Typo="Typo.h6">Novo Produto</MudText>
-    </TitleContent>
-    <DialogContent>
-        <MudTextField @bind-Value="novoProduto.Sku" Label="SKU" Required="true" />
-        <MudTextField @bind-Value="novoProduto.Nome" Label="Nome" Required="true" Class="mt-3" />
-        <MudTextField @bind-Value="novoProduto.Descricao" Label="Descrição" Lines="3" Class="mt-3" />
-        <MudTextField @bind-Value="novoProduto.CodigoBarras" Label="Código de Barras" Class="mt-3" />
-        <MudNumericField @bind-Value="novoProduto.PrecoVenda" Label="Preço de Venda" Format="N2" Class="mt-3" />
-        <MudNumericField @bind-Value="novoProduto.PrecoCusto" Label="Preço de Custo" Format="N2" Class="mt-3" />
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="FecharDialog">Cancelar</MudButton>
-        <MudButton Color="Color.Primary" OnClick="SalvarProduto">Salvar</MudButton>
-    </DialogActions>
-</MudDialog>
-
 @code {
-    private List<ProdutoDto> produtos = new();
-    private bool loading = false;
-    private bool dialogVisible = false;
-    private NovoProdutoDto novoProduto = new();
-    private DialogOptions dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true };
+    private IEnumerable<ProdutoDto> _produtos = new List<ProdutoDto>();
+    private bool _loading = false;
 
     protected override async Task OnInitializedAsync()
     {
-        await CarregarProdutos();
+        await LoadProducts();
     }
 
-    private async Task CarregarProdutos()
+    private async Task LoadProducts()
     {
-        loading = true;
+        _loading = true;
         try
         {
-            var client = HttpClientFactory.CreateClient("SuperERP.API");
-            produtos = await client.GetFromJsonAsync<List<ProdutoDto>>("api/v1/produtos") ?? new();
+            _produtos = await ProdutoService.GetAll();
         }
         catch (Exception ex)
         {
@@ -79,61 +59,51 @@
         }
         finally
         {
-            loading = false;
+            _loading = false;
         }
     }
 
-    private void AbrirDialogNovo()
+    private async Task OpenDialog(ProdutoDto? produto)
     {
-        novoProduto = new();
-        dialogVisible = true;
-    }
-
-    private void FecharDialog()
-    {
-        dialogVisible = false;
-    }
-
-    private async Task SalvarProduto()
-    {
-        try
+        var parameters = new DialogParameters();
+        if (produto != null)
         {
-            var client = HttpClientFactory.CreateClient("SuperERP.API");
-            var response = await client.PostAsJsonAsync("api/v1/produtos", novoProduto);
-            
-            if (response.IsSuccessStatusCode)
-            {
-                Snackbar.Add("Produto criado com sucesso!", Severity.Success);
-                dialogVisible = false;
-                await CarregarProdutos();
-            }
-            else
-            {
-                Snackbar.Add("Erro ao criar produto", Severity.Error);
-            }
+            parameters.Add("Produto", produto);
         }
-        catch (Exception ex)
+
+        var dialog = DialogService.Show<ProdutoDialog>(produto == null ? "Novo Produto" : "Editar Produto", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
         {
-            Snackbar.Add($"Erro: {ex.Message}", Severity.Error);
+            await LoadProducts();
         }
     }
 
-    public class ProdutoDto
+    private async Task OnDelete(Guid id)
     {
-        public Guid Id { get; set; }
-        public string Sku { get; set; } = "";
-        public string Nome { get; set; } = "";
-        public decimal PrecoVenda { get; set; }
-        public decimal EstoqueAtual { get; set; }
-    }
+        var parameters = new DialogParameters
+        {
+            { "ContentText", "Tem certeza que deseja excluir este produto?" },
+            { "ButtonText", "Excluir" },
+            { "Color", Color.Error }
+        };
 
-    public class NovoProdutoDto
-    {
-        public string Sku { get; set; } = "";
-        public string Nome { get; set; } = "";
-        public string? Descricao { get; set; }
-        public string? CodigoBarras { get; set; }
-        public decimal PrecoVenda { get; set; }
-        public decimal PrecoCusto { get; set; }
+        var dialog = DialogService.Show<ConfirmationDialog>("Confirmar Exclusão", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            try
+            {
+                await ProdutoService.Remove(id);
+                Snackbar.Add("Produto excluído com sucesso!", Severity.Success);
+                await LoadProducts();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Erro ao excluir produto: {ex.Message}", Severity.Error);
+            }
+        }
     }
 }

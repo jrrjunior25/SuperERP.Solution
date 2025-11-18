@@ -14,7 +14,13 @@ namespace SuperERP.PDV.Infrastructure.Data.Mappings
                 .IsRequired()
                 .HasColumnType("decimal(18,2)");
 
-            builder.Property(s => s.ValorFechamento)
+            builder.Property(s => s.ValorFechamentoContado)
+                .HasColumnType("decimal(18,2)");
+
+            builder.Property(s => s.ValorFechamentoCalculado)
+                .HasColumnType("decimal(18,2)");
+
+            builder.Property(s => s.DiferencaFechamento)
                 .HasColumnType("decimal(18,2)");
 
             builder.Property(s => s.Status)

@@ -1,21 +1,23 @@
 using Microsoft.EntityFrameworkCore;
 using SuperERP.Domain.Entities.Comercial;
-using SuperERP.Domain.Interfaces.Repositories;
+using SuperERP.Domain.Interfaces;
 using SuperERP.Infrastructure.Data.Context;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace SuperERP.Infrastructure.Repositories;
-
-public class ProdutoRepository : Repository<Produto>, IProdutoRepository
+namespace SuperERP.Infrastructure.Repositories
 {
-    public ProdutoRepository(SuperERPDbContext context) : base(context) { }
-
-    public async Task<Produto?> GetBySkuAsync(string sku, CancellationToken cancellationToken = default)
+    public class ProdutoRepository : RepositoryBase<Produto>, IProdutoRepository
     {
-        return await _dbSet.FirstOrDefaultAsync(x => x.Sku == sku, cancellationToken);
-    }
+        public ProdutoRepository(SuperERPDbContext context) : base(context) { }
 
-    public async Task<Produto?> GetByCodigoBarrasAsync(string codigoBarras, CancellationToken cancellationToken = default)
-    {
-        return await _dbSet.FirstOrDefaultAsync(x => x.CodigoBarras == codigoBarras, cancellationToken);
+        public async Task<IEnumerable<Produto>> SearchByName(string name)
+        {
+            return await DbSet.AsNoTracking()
+                .Where(p => p.Nome.Contains(name))
+                .OrderBy(p => p.Nome)
+                .ToListAsync();
+        }
     }
 }

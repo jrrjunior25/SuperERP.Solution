@@ -1,0 +1,74 @@
+@using SuperERP.Application.Dtos
+@using SuperERP.Application.Interfaces
+@inject IProdutoAppService ProdutoService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(_isEditMode ? "Editar Produto" : "Novo Produto")</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudTextField @bind-Value="_produto.Sku" Label="SKU" Required="true" For="@(() => _produto.Sku)" />
+            <MudTextField @bind-Value="_produto.Nome" Label="Nome" Required="true" Class="mt-3" For="@(() => _produto.Nome)" />
+            <MudTextField @bind-Value="_produto.Descricao" Label="Descrição" Lines="3" Class="mt-3" />
+            <MudNumericField @bind-Value="_produto.PrecoVenda" Label="Preço de Venda" Format="N2" Class="mt-3" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Save">Salvar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter] public ProdutoDto? Produto { get; set; }
+
+    private MudForm _form;
+    private ProdutoDto _produto = new();
+    private bool _isEditMode = false;
+
+    protected override void OnInitialized()
+    {
+        if (Produto != null)
+        {
+            _isEditMode = true;
+            _produto = new ProdutoDto // Cria uma cópia para não alterar o original em caso de cancelamento
+            {
+                Id = Produto.Id,
+                Sku = Produto.Sku,
+                Nome = Produto.Nome,
+                Descricao = Produto.Descricao,
+                PrecoVenda = Produto.PrecoVenda
+            };
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Save()
+    {
+        await _form.Validate();
+        if (!_form.IsValid) return;
+
+        try
+        {
+            if (_isEditMode)
+            {
+                await ProdutoService.Update(_produto);
+                Snackbar.Add("Produto atualizado com sucesso!", Severity.Success);
+            }
+            else
+            {
+                await ProdutoService.Create(_produto);
+                Snackbar.Add("Produto criado com sucesso!", Severity.Success);
+            }
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro ao salvar produto: {ex.Message}", Severity.Error);
+        }
+    }
+}

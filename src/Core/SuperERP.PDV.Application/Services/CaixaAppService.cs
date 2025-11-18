@@ -71,5 +71,28 @@ namespace SuperERP.PDV.Application.Services
 
             return _mapper.Map<PdvVendaDto>(venda);
         }
+
+        public async Task<ResumoFechamentoDto> FecharSessao(FecharSessaoDto dto)
+        {
+            var sessao = await _sessaoCaixaRepository.GetById(dto.SessaoCaixaId);
+            if (sessao == null) throw new Exception("Sessão do caixa não encontrada.");
+
+            sessao.Fechar(dto.ValorContado);
+
+            await _sessaoCaixaRepository.Update(sessao);
+
+            return new ResumoFechamentoDto
+            {
+                SessaoCaixaId = sessao.Id,
+                DataAbertura = sessao.DataAbertura,
+                DataFechamento = sessao.DataFechamento.Value,
+                ValorAbertura = sessao.ValorAbertura,
+                TotalVendas = sessao.CalcularTotalVendas(),
+                TotalPagamentosDinheiro = sessao.CalcularTotalPagamentosEmDinheiro(),
+                ValorEsperado = sessao.ValorFechamentoCalculado.Value,
+                ValorContado = sessao.ValorFechamentoContado.Value,
+                Diferenca = sessao.DiferencaFechamento.Value
+            };
+        }
     }
 }

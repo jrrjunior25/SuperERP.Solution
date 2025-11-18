@@ -35,7 +35,9 @@ namespace SuperERP.PDV.Infrastructure.Data.Migrations
                     DataAbertura = table.Column<DateTime>(type: "datetime2", nullable: false),
                     DataFechamento = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ValorAbertura = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    ValorFechamento = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    ValorFechamentoContado = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    ValorFechamentoCalculado = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    DiferencaFechamento = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     DataCriacao = table.Column<DateTime>(type: "datetime2", nullable: false),
                     DataAtualizacao = table.Column<DateTime>(type: "datetime2", nullable: true)

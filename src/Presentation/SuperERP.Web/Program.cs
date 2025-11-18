@@ -28,6 +28,10 @@ builder.Services.AddScoped<ISessaoCaixaRepository, SessaoCaixaRepository>();
 builder.Services.AddScoped<IPdvVendaRepository, PdvVendaRepository>();
 builder.Services.AddScoped<ICaixaAppService, CaixaAppService>();
 
+// Configuração da Injeção de Dependência para o Módulo Principal
+builder.Services.AddScoped<IProdutoRepository, ProdutoRepository>();
+builder.Services.AddScoped<IProdutoAppService, ProdutoAppService>();
+
 
 builder.Services.AddHttpClient("SuperERP.API", client =>
 {
